@@ -197,6 +197,11 @@ async function main() {
     value: 0.75,
   });
   assert.ok(delivery, "verified live parameter must be accepted");
+  assert.equal(delivery.policy, "parameter-ramp", "continuous controls use the realtime ramp path");
+  assert.ok(delivery.rampFrames >= 100,
+    "missing engine UI smoothing must still dezipper fast edits for at least 4 ms");
+  assert.equal(messages.at(-1).rampFrames, delivery.rampFrames,
+    "the Worklet must receive smoothing frames with the live parameter event");
   assert.equal(messages.filter((message) => message.type === "production-parameter").length, 1,
     "live edit must use the dedicated parameter message");
   assert.equal(host.syncProject(liveProject), false,
