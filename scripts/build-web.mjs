@@ -80,7 +80,13 @@ cpSync(web, dist, {
 });
 groups.forEach((group, i) => put(bundles[i].slice(2), group.join('\n;\n') + '\n'));
 put('styles.bundle.css', css + '\n');
-const discarded = new Set([...scripts, ...uniqueStyles]);
+// One runtime module is also an early bootstrap dependency: retain its source file.
+const bootstrapScripts = new Set([...sourceIndex.matchAll(/<script src="([^"]+)"/g)]
+  .map(match => match[1].split('?')[0]));
+const discarded = new Set([
+  ...scripts.filter(ref => !bootstrapScripts.has(ref)),
+  ...uniqueStyles,
+]);
 for (const ref of discarded) rmSync(join(dist, ref.slice(2)), { force: true });
 
 let bind = originalBind.replace(scriptPattern,
