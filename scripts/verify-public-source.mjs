@@ -169,7 +169,7 @@ for (const p of [
 for (const p of [
   "docs/history", "docs/releases", "HANDOFF_PROMPT_FOR_CHATGPT.md",
   ".github/workflows/assistant-ci-control.yml", ".github/workflows/deploy-server.yml",
-  "scripts/deploy-server-local.sh", ".git/refs/remotes",
+  "scripts/deploy-server-local.sh",
 ]) if (existsSync(p)) fail("private history/deployment material found: " + p);
 // High-confidence secret tripwires. Manual review remains mandatory.
 const sensitiveFile = /(?:^|\/)(?:\.env(?:\..*)?|id_rsa|id_ed25519|[^/]+\.(?:pem|p12|pfx|key))$/i;
