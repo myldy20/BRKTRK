@@ -16,6 +16,9 @@ web/engines/
 *.p12
 *.pfx
 
+# Compiled Pages artifacts (never commit generated bundles)
+dist/
+
 # Coverage, caches and transient work
 coverage/
 .nyc_output/
