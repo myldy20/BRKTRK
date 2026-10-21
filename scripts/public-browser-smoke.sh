@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Run from an isolated clean source checkout after npm run dev:engine.
 # Never calls the private CI's engine-store transfer or production environment.
-test -f web/engines/catalog-v1.json || {
+test -f "${BRKTRK_WEB_DIR:-web}/engines/catalog-v1.json" || {
   echo "Build the local synth package first: npm run dev:engine" >&2
   exit 1
 }
@@ -22,9 +22,10 @@ trap cleanup EXIT INT TERM
 
 # Bind to the actual ephemeral port (no test-port collision/race).
 python3 -u - <<'PY' > "$tmp/server.log" 2>&1 &
+import os
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from functools import partial
-handler = partial(SimpleHTTPRequestHandler, directory="web")
+handler = partial(SimpleHTTPRequestHandler, directory=os.environ.get("BRKTRK_WEB_DIR", "web"))
 server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
 print("PUBLIC_BROWSER_PORT=" + str(server.server_address[1]), flush=True)
 server.serve_forever()

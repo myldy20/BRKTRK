@@ -15,6 +15,14 @@ Requirements: Node.js 22+, Python 3, and a current Chromium browser.
     npm run dev:engine
     npm run serve
 
+To create the compact public artifact after generating the development engine:
+
+    npm run build:web
+
+The output is written to `dist/` (generated only, never committed). Its runtime JS
+and CSS are bundled without changing the modular source files in `web/`.
+GitHub Actions tests `dist/` in Chromium and deploys it to Pages.
+
 Open http://localhost:8080. Use a web server: opening web/index.html directly does not provide the required secure browser origin.
 
 A first-party development synth package (BRK DEV POLY) is generated locally. Separately published production sound engine packages are not included. A project referring to unavailable packages must fail explicitly instead of silently replacing its engine.

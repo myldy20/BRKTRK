@@ -8,7 +8,8 @@
     "test": "node scripts/verify-public-source.mjs",
     "dev:engine": "node scripts/build-dev-engine-store.mjs",
     "serve": "python3 -m http.server 8080 --directory web",
-    "test:browser": "bash scripts/public-browser-smoke.sh"
+    "test:browser": "bash scripts/public-browser-smoke.sh",
+    "build:web": "node scripts/build-web.mjs"
   },
   "engines": {
     "node": ">=22"
