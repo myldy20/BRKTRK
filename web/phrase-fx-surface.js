@@ -42,7 +42,7 @@
   if (typeof document === "undefined") return;
 
   const styleHref = "./phrase-fx-surface.css";
-  if (!document.querySelector(`link[href="${styleHref}"]`)) {
+  if (!document.querySelector('link[data-brktrk-style-bundle], link[href^="./phrase-fx-surface.css"]')) {
     const style = document.createElement("link");
     style.rel = "stylesheet";
     style.href = styleHref;
