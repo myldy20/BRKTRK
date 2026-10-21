@@ -69,6 +69,19 @@
         "local synth package identity/hash not verified");
       assert(view.parameters?.length === 9,
         "genuine development synth parameter registry must expose nine parameters");
+
+      // This caught the compact build regression where twelve shared Worklet
+      // imports were deleted from dist/ while the app shell still booted.
+      // Headless Chromium is launched with no-user-gesture autoplay for CI.
+      stage("AUDIO_WORKLET_" + width);
+      const audioReadiness = app.BRKTRKAudioReadiness;
+      assert(typeof audioReadiness?.ensureReady === "function", "AudioReadiness unavailable");
+      await Promise.race([
+        audioReadiness.ensureReady({ source: "public-source-browser-smoke" }),
+        wait(12000).then(() => { throw new Error("AudioWorklet readiness timeout"); }),
+      ]);
+      assert(audioReadiness.snapshot().ready === true,
+        "AudioWorklet did not reach running and verified audio readiness");
       assert(!doc.body.dataset.bootstrapInput || doc.body.dataset.bootstrapInput === "ready",
         "input was unexpectedly re-locked");
       result.dataset.diagnostics = JSON.stringify({
