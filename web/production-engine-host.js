@@ -424,9 +424,13 @@
     const discrete = parameter.type === "enum" || parameter.type === "stepped" || Array.isArray(parameter.values);
     const profile = discrete ? view.ui?.interaction?.discrete : view.ui?.interaction?.continuous;
     const smoothingOverride = Number(view.ui?.smoothingMsByKey?.[id]);
-    const smoothingMs = Number.isFinite(smoothingOverride)
+    const declaredMs = Number.isFinite(smoothingOverride)
       ? Math.max(0, smoothingOverride)
       : Math.max(0, Number(profile?.defaultSmoothingMs) || 0);
+    // Web Alpha must not deliver an abrupt parameter step merely because an
+    // engine omits its UI smoothing profile. Ramp continuous parameters in the
+    // existing Worklet/ABI path, keeping exact engine package pins untouched.
+    const smoothingMs = discrete ? declaredMs : Math.max(4, declaredMs);
     // `entry` and `ui` travel with the interaction so a targeted re-render can
     // format a value exactly as the full render did. Without them the store
     // render overwrites a freshly edited ABI reading with a percentage.

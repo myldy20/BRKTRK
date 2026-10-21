@@ -67,6 +67,42 @@ const plain = (value) => JSON.parse(JSON.stringify(value));
   );
 }
 
+// After the user creates the first verified Instrument, the untouched
+// two-note preview becomes playable. Only that exact preview may be bound.
+{
+  require("./production-instrument-domain.js");
+  require("./track-insert-fx-domain.js");
+  const { ProjectStore } = require("./stores.js");
+  const project = new ProjectStore(plain(makeInitialModel()));
+  const instrument = {
+    name: "VALID",
+    engineRef: { moduleId: "design.myldy.dev", engineId: "brk-dev-poly", requestedVersion: "0.1.0-dev1" },
+    patchState: { schemaVersion: 1, encoding: "base64", data: null },
+    parameterSnapshot: {},
+  };
+  project.createProductionInstrument(0, instrument);
+  const changes = [];
+  project.subscribe("audio", (change) => changes.push(change));
+  const attached = project.assignStarterPhraseInstrument(0);
+  assert.equal(attached.mutated, true);
+  assert.deepEqual([0, 4, 8, 12].map((row) => project.getState().phrases[0][row].instrument), [0, 0, 0, 0]);
+  assert.equal(changes.length, 1);
+  assert.equal(changes[0].structuralPlayback, true);
+  assert.deepEqual(plain(changes[0].before.map((step) => step.instrument)), Array(16).fill(-1));
+  assert.equal(project.assignStarterPhraseInstrument(0).mutated, false, "starter must only bind once");
+
+  const edited = new ProjectStore(plain(makeInitialModel()));
+  edited.createProductionInstrument(0, instrument);
+  edited.getState().phrases[0][0].note = 66;
+  assert.equal(edited.assignStarterPhraseInstrument(0).mutated, false);
+  assert.equal(edited.getState().phrases[0][0].instrument, -1, "custom note must never be assigned implicitly");
+
+  const restored = new ProjectStore(plain(makeInitialModel()));
+  restored.createProductionInstrument(0, instrument);
+  restored.getState().projectName = "MY SONG";
+  assert.equal(restored.assignStarterPhraseInstrument(0).mutated, false, "existing user song must be untouched");
+}
+
 require("./a5-event-plan-instrument-truth.test.cjs");
 require("./a5-instrument-reference-runtime.test.cjs");
 

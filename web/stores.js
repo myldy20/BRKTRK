@@ -286,6 +286,45 @@
       return { value: after, before, after, mutated: true, changeSet, metadata: clone(metadata) };
     }
 
+    // Bind the unassigned two-note preview only when it still has the exact
+    // virgin-project shape. A user-edited, restored or imported song is never
+    // touched by this convenience action.
+    assignStarterPhraseInstrument(instrumentId, metadata = {}) {
+      const id = productionInstrumentDomain().instrumentId(instrumentId);
+      const project = this.state;
+      const phrase = project.phrases?.[0];
+      if (!project.instrumentPool?.[id] || project.projectName !== "UNTITLED 01"
+          || !Array.isArray(phrase) || phrase.length !== 16
+          || Object.keys(project.phrases ?? {}).length !== 1
+          || project.song?.[0]?.[0] !== 0 || project.chains?.[0]?.[0]?.phrase !== 0) {
+        return { mutated: false, reason: "not-virgin-preview" };
+      }
+      const expectedNotes = new Map([[0, 48], [4, -2], [8, 55], [12, -2]]);
+      const untouched = phrase.every((step, row) =>
+        step?.note === (expectedNotes.get(row) ?? -1)
+        && step?.instrument === -1
+        && (!Array.isArray(step?.parameterEvents) || step.parameterEvents.length === 0)
+        && (step?.fx ?? []).every((fx) => Number(fx?.command ?? fx ?? 0) === 0));
+      if (!untouched) return { mutated: false, reason: "edited-preview" };
+      const before = clone(phrase);
+      const after = clone(phrase);
+      for (const row of expectedNotes.keys()) after[row].instrument = id;
+      const changeSet = createProjectChangeSet({
+        subtype: "phrase.starter-instrument",
+        target: "project.phrases.0",
+        path: ["phrases", 0],
+        before, after,
+        affectsPlayback: true,
+        structuralPlayback: true,
+        renderTargets: ["phrase.grid", "instrument.context"],
+        source: metadata.source,
+        transaction: { instrumentId: id },
+      });
+      project.phrases[0] = after;
+      this.publish(changeSet, ["project", "persistence", "audio", "render"]);
+      return { mutated: true, before, after: clone(after), changeSet };
+    }
+
     createProductionInstrument(instrumentId, value, metadata = {}) {
       const id = productionInstrumentDomain().instrumentId(instrumentId);
       if (Object.hasOwn(this.state.instrumentPool, id)) throw new Error(`Production Instrument ${id} already exists`);
