@@ -156,21 +156,41 @@
       this.params = new Float32Array(0x0300);
       for (const [id, value] of Object.entries(DEFAULTS)) this.params[Number(id)] = value;
       this.ramps = new Map();
+      // 4 ms one-pole dezipper for controls that otherwise step audio abruptly.
+      // A 128-frame block at 48 kHz is only 2.7 ms. Use sample-rate-aware
+      // smoothing per frame so fast UI events never bypass the transition.
+      this.smoothedParams = new Float32Array(this.params);
+      this.smoothingAlpha = 1 - Math.exp(-1 / (Math.max(1, this.sampleRate) * 0.004));
     }
 
     param(id) {
-      return this.params[id];
+      return id === PARAM.CUTOFF || id === PARAM.RESONANCE || id === PARAM.LEVEL || id === PARAM.PAN
+        ? this.smoothedParams[id] : this.params[id];
+    }
+
+    smoothAudioParameters() {
+      const alpha = this.smoothingAlpha;
+      for (const id of [PARAM.CUTOFF, PARAM.RESONANCE, PARAM.LEVEL, PARAM.PAN]) {
+        const current = this.smoothedParams[id];
+        const target = this.params[id];
+        this.smoothedParams[id] = Math.abs(target - current) < 1e-6 ? target
+          : current + (target - current) * alpha;
+      }
     }
 
     setParam(id, value) {
       if (id < 0 || id >= this.params.length) return;
       this.params[id] = clamp(finite(value, 0), 0, 1);
+      // Initialization and stopped playback should begin with exact preset
+      // values. Only edits while an active voice is sounding need a fade.
+      if (this.stage === STAGE.IDLE && this.smoothedParams) this.smoothedParams[id] = this.params[id];
       this.ramps.delete(id);
     }
 
     startRamp(id, start, end, frames) {
       if (id < 0 || id >= this.params.length) return;
       this.params[id] = clamp(finite(start, 0), 0, 1);
+      if (this.stage === STAGE.IDLE && this.smoothedParams) this.smoothedParams[id] = this.params[id];
       this.ramps.set(id, { value: this.params[id], end: clamp(finite(end, 0), 0, 1), remaining: Math.max(1, frames | 0) });
     }
 
@@ -262,6 +282,7 @@
     render(frames, left, right, leftStart, rightStart) {
       for (let frame = 0; frame < frames; frame += 1) {
         this.advanceRamps();
+        this.smoothAudioParameters();
         if (this.stage === STAGE.IDLE) {
           left[leftStart + frame] = 0;
           right[rightStart + frame] = 0;

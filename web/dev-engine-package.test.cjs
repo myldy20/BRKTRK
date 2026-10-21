@@ -630,6 +630,31 @@ async function main() {
   );
   edited.destroy();
 
+  // Fast live gain/pan changes must be dezippered at the DSP, with neither a
+  // mute click on the next sample nor a sluggish (>50 ms) response.
+  // Keeping this in the real packaged-ABI test exercises the code users hear.
+  const smooth = freshPerformer();
+  smooth.handleEvent({ type: "parameter", parameterId: "attack", value: 0, rampFrames: 0, sampleOffset: 0 });
+  smooth.handleEvent({ type: "parameter", parameterId: "sustain", value: 1, rampFrames: 0, sampleOffset: 0 });
+  smooth.handleEvent({ type: "note-on", pitch: 60, velocity: 100, sampleOffset: 0 });
+  for (let i = 0; i < 8; i += 1) smooth.process({ frameCount: frames, left, right, accumulate: false });
+  smooth.handleEvent({ type: "parameter", parameterId: "pan", value: 1, rampFrames: 0, sampleOffset: 0 });
+  smooth.process({ frameCount: frames, left, right, accumulate: false });
+  const energy = (samples, count) => [...samples.slice(0, count)].reduce((sum, sample) => sum + Math.abs(sample), 0);
+  assert.ok(energy(left, 24) > energy(right, 24) * 0.25,
+    "hard pan jump must retain a smooth left-channel transition");
+  for (let i = 0; i < 20; i += 1) smooth.process({ frameCount: frames, left, right, accumulate: false });
+  assert.ok(energy(left, frames) < energy(right, frames) * 0.06,
+    "hard pan jump should reach the target within a musical gesture");
+  smooth.handleEvent({ type: "parameter", parameterId: "pan", value: 0.5, rampFrames: 0, sampleOffset: 0 });
+  for (let i = 0; i < 18; i += 1) smooth.process({ frameCount: frames, left, right, accumulate: false });
+  smooth.handleEvent({ type: "parameter", parameterId: "level", value: 0, rampFrames: 0, sampleOffset: 0 });
+  smooth.process({ frameCount: frames, left, right, accumulate: false });
+  assert.ok(energy(left, 24) > 0.00001, "hard gain zero must fade instead of cutting the waveform mid-cycle");
+  for (let i = 0; i < 20; i += 1) smooth.process({ frameCount: frames, left, right, accumulate: false });
+  assert.ok(energy(left, frames) < 0.0001, "dezippered level must settle to silence");
+  smooth.destroy();
+
   // State is a fixed-size block, so every preset is zero-padded. A zero abiId
   // is not a parameter; reading it back as one would write junk over the very
   // state just applied.
