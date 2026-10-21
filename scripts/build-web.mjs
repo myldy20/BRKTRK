@@ -95,7 +95,7 @@ bind = bind.replace(stylePattern, 'const DYNAMIC_STYLE_ASSETS = Object.freeze([]
 put('app-bind.js', bind);
 
 let index = sourceIndex.replace(/^[ \t]*<link rel="stylesheet" href="[^"]+">[ \t]*\r?\n/gm, '');
-index = index.replace('</head>', '  <link rel="stylesheet" href="./styles.bundle.css?v=0.9.0">\n</head>');
+index = index.replace('</head>', '  <link rel="stylesheet" data-brktrk-style-bundle href="./styles.bundle.css?v=0.9.0">\n</head>');
 for (const href of [...index.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(match => match[1])) {
   const local = href.split('?')[0];
   if (!local.startsWith('./') || !existsSync(join(dist, local.slice(2)))) {
