@@ -1,0 +1,134 @@
+.track-insert-fx-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line, #2b3642);
+  background: var(--panel, #0b1118);
+}
+.track-insert-fx-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.track-insert-fx-header small { opacity: .72; }
+.track-insert-fx-rack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.track-insert-fx-slot {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line, #2b3642);
+  background: rgba(255,255,255,.02);
+}
+.track-insert-fx-slot-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.track-insert-fx-slot-toolbar select,
+.track-insert-fx-slot-toolbar button { min-height: 32px; }
+.track-insert-fx-parameters {
+  display: grid;
+  gap: 6px;
+}
+.track-insert-fx-parameter {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, .7fr) minmax(7rem, 2fr) minmax(5rem, .7fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.track-insert-fx-parameter output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.track-insert-fx-empty { opacity: .65; padding: 8px 0; }
+.track-insert-fx-slot[data-bypass="true"] .track-insert-fx-parameters { opacity: .55; }
+@media (max-width: 760px) {
+  .track-insert-fx-rack { grid-template-columns: 1fr; }
+  .track-insert-fx-header { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .track-insert-fx-parameter { grid-template-columns: 5rem minmax(6rem, 1fr) 5rem; }
+}
+
+/* UX1: the mix workspace becomes a narrow side inspector at >=1180px.
+   The global two-up rack has a 128px minimum selector *per* slot and a
+   three-column parameter row with a ~280px minimum. Inside a 340-420px
+   inspector this silently overflows and stacks controls over FX2.
+   Keep both real serial slots; present them as readable stacked modules. */
+#inspectorPane .track-insert-fx-panel {
+  min-width: 0;
+  padding: 8px;
+  margin-top: 8px;
+  gap: 7px;
+}
+#inspectorPane .track-insert-fx-header {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+}
+#inspectorPane .track-insert-fx-header small {
+  font-size: 9px;
+  line-height: 1.3;
+}
+#inspectorPane .track-insert-fx-rack {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+#inspectorPane .track-insert-fx-slot {
+  min-width: 0;
+  padding: 7px;
+  gap: 6px;
+}
+#inspectorPane .track-insert-fx-slot-toolbar {
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 6px;
+}
+#inspectorPane .track-insert-fx-slot-toolbar select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+}
+#inspectorPane .track-insert-fx-slot-toolbar button {
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 7px;
+  white-space: nowrap;
+  font-size: 10px;
+}
+#inspectorPane .track-insert-fx-parameters { min-width: 0; }
+#inspectorPane .track-insert-fx-parameter {
+  grid-template-columns: minmax(0, 4.5rem) minmax(0, 1fr) minmax(0, 4.5rem);
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+}
+#inspectorPane .track-insert-fx-parameter span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#inspectorPane .track-insert-fx-parameter input[type="range"] {
+  width: 100%;
+  min-width: 0;
+}
+#inspectorPane .track-insert-fx-parameter output {
+  min-width: 0;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 380px) {
+  #inspectorPane .track-insert-fx-parameter {
+    grid-template-columns: minmax(0, 3.75rem) minmax(0, 1fr) minmax(0, 4.15rem);
+    gap: 4px;
+  }
+}

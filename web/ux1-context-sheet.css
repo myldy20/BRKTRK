@@ -1,0 +1,162 @@
+/*
+ * UX1-D1 (#537) — shared portrait Context Sheet visual host.
+ *
+ * Note / Value / grouped FX / Context Picker / playback-policy keep their
+ * existing command and lifecycle owners. This layer only gives them one visual
+ * shell geometry so later lifecycle convergence does not require another UI
+ * redesign.
+ */
+
+@media (max-width: 760px) {
+  :is(
+    .p3-note-dock,
+    .p32-value-dock,
+    .m41b-phone-fx-dock,
+    .p3-context-picker,
+    .p36-mobile-policy-panel
+  ) {
+    left: max(5px, env(safe-area-inset-left));
+    right: max(5px, env(safe-area-inset-right));
+    bottom: calc(60px + max(4px, env(safe-area-inset-bottom)));
+    box-sizing: border-box;
+    max-height: calc(100dvh - 78px);
+    border: 1px solid rgba(82, 111, 136, .48);
+    border-radius: 10px;
+    background:
+      linear-gradient(180deg, rgba(15, 28, 40, .46), transparent 38px),
+      rgba(7, 14, 21, .985);
+    box-shadow: 0 -18px 48px rgba(0, 0, 0, .46);
+    backdrop-filter: blur(12px);
+    overscroll-behavior: contain;
+  }
+
+  :is(
+    .p3-note-header,
+    .p32-value-header,
+    .m41b-phone-fx-header,
+    .p3-context-picker-header,
+    .p36-mobile-policy-panel > header
+  ) {
+    min-height: 42px;
+    border-bottom: 1px solid rgba(82, 111, 136, .24);
+  }
+
+  :is(
+    .p3-note-header,
+    .p32-value-header,
+    .m41b-phone-fx-header,
+    .p3-context-picker-header,
+    .p36-mobile-policy-panel > header
+  ) button {
+    min-width: 42px;
+    min-height: 42px;
+    border-color: rgba(82, 111, 136, .43);
+    border-radius: 6px;
+    background: rgba(11, 21, 31, .88);
+    color: var(--ink);
+  }
+
+  :is(
+    .p32-value-header,
+    .m41b-phone-fx-header,
+    .p3-context-picker-header
+  ) :is(span, strong) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .p3-context-picker {
+    padding: 8px;
+  }
+
+  .p3-context-picker-header {
+    min-height: 52px;
+    grid-template-columns: minmax(0, 1fr) auto 42px;
+    padding-bottom: 5px;
+  }
+
+  .p3-context-keypad {
+    padding: 8px 0;
+    gap: 5px;
+  }
+
+  .p3-context-keypad button,
+  .p3-context-picker-actions button {
+    border-color: rgba(82, 111, 136, .40);
+    background: rgba(11, 21, 31, .88);
+  }
+
+  body.p3-context-picker-open .mobile-tabs {
+    visibility: visible;
+  }
+
+  body.p3-context-picker-open .command-bar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  :is(
+    .p32-value-controls button,
+    .p32-value-actions button,
+    .m41b-phone-fx-command-choices button,
+    .m41b-phone-fx-value-row button,
+    .m41b-phone-fx-actions button,
+    .p3-context-keypad button,
+    .p3-context-picker-actions button,
+    .p36-mobile-policy-panel > button,
+    .p36-mobile-scope-grid button
+  ) {
+    border-color: rgba(82, 111, 136, .40);
+    background: rgba(11, 21, 31, .86);
+  }
+
+  :is(
+    .p32-value-actions .primary,
+    .m41b-phone-fx-actions .primary,
+    .p3-context-picker-actions .primary
+  ) {
+    border-color: rgba(255, 75, 156, .68);
+    background: rgba(255, 75, 156, .11);
+    color: var(--pink);
+  }
+
+  .m41b-phone-fx-command-choices button.active {
+    border-color: var(--pink);
+    background: rgba(255, 75, 156, .12);
+    color: var(--pink);
+    box-shadow: inset 0 -2px 0 var(--pink);
+  }
+
+  :is(
+    .p32-value-controls input,
+    .m41b-phone-fx-value-row input
+  ) {
+    border-color: rgba(82, 111, 136, .43);
+    background: #071018;
+    color: var(--cyan);
+  }
+
+  .p36-mobile-policy-panel {
+    padding: 8px;
+    gap: 6px;
+    border-color: rgba(82, 111, 136, .48);
+  }
+
+  #p36MobileFollow[data-follow-state="hold"] {
+    border-color: var(--amber);
+    background: rgba(255, 186, 59, .055);
+  }
+}
+
+@media (max-width: 390px) {
+  :is(
+    .p3-note-dock,
+    .p32-value-dock,
+    .m41b-phone-fx-dock,
+    .p3-context-picker,
+    .p36-mobile-policy-panel
+  ) {
+    left: max(4px, env(safe-area-inset-left));
+    right: max(4px, env(safe-area-inset-right));
+    border-radius: 8px;
+  }
+}

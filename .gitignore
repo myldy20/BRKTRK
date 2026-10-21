@@ -1,0 +1,31 @@
+node_modules/
+.DS_Store
+*.log
+web/build.json
+
+# Local development engine store (scripts/build-dev-engine-store.mjs).
+# The production engine store is published separately and is never committed.
+web/engines/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Coverage, caches and transient work
+coverage/
+.nyc_output/
+.cache/
+.tmp/
+tmp/
+*.tmp
+*.swp
+*.swo
+
+# Local editor state
+.vscode/
+.idea/

@@ -1,0 +1,106 @@
+{
+  "contract": {
+    "version": 1,
+    "tableRows": 16,
+    "lifetime": "[startFrame,endFrame)",
+    "ticClasses": {
+      "00": "trigger",
+      "01": "musical",
+      "FB": "musical",
+      "FC": "octave-map",
+      "FD": "velocity-map",
+      "FE": "note-map",
+      "FF": "detached"
+    },
+    "mappedRows": "explicit-carrier-row",
+    "unresolved": [
+      "same-row-tic-application",
+      "tbl-tbx-tho-hop-order",
+      "source-restart-reset-carry",
+      "mapped-carrier-derivation"
+    ]
+  },
+  "musical02": {
+    "frames": [0, 2000, 4000, 6000, 8000],
+    "rows": [0, 1, 2, 3, 4],
+    "cursorBefore": [0, 1, 2, 3, 4],
+    "cursorAfter": [1, 2, 3, 4, 5],
+    "finalCursor": 5
+  },
+  "detachedFF": {
+    "frames": [0, 221, 441, 662, 882],
+    "rows": [0, 1, 2, 3, 4],
+    "cursorBefore": [0, 1, 2, 3, 4],
+    "cursorAfter": [1, 2, 3, 4, 5],
+    "finalCursor": 5
+  },
+  "trigger00": {
+    "frames": [0, 0, 250, 1000],
+    "rows": [0, 1, 2, 3],
+    "cursorBefore": [0, 1, 2, 3],
+    "cursorAfter": [1, 2, 3, 4],
+    "finalCursor": 4
+  },
+  "mappedFE": {
+    "frames": [0, 100, 200],
+    "rows": [0, 11, 4],
+    "cursorBefore": [0, 0, 0],
+    "cursorAfter": [0, 0, 0],
+    "finalCursor": 0,
+    "carrierValues": [48, 59, 64]
+  },
+  "independentColumns": {
+    "noteVolume": {
+      "frames": [0, 1000, 2000, 3000],
+      "rows": [0, 1, 2, 3],
+      "tic": "01"
+    },
+    "fx1": {
+      "frames": [0, 2000, 4000],
+      "rows": [0, 1, 2],
+      "tic": "02"
+    },
+    "fx2": {
+      "frames": [500, 2500],
+      "rows": [0, 1],
+      "tic": "00"
+    },
+    "fx3": {
+      "frames": [0, 240, 480],
+      "rows": [0, 1, 2],
+      "tic": "FF"
+    }
+  },
+  "auxiliary": {
+    "identity": [2, "auxiliary", 7, 12, 4],
+    "frames": [200, 440, 680, 920, 1160, 1400],
+    "rows": [0, 1, 2, 3, 4, 5],
+    "endFrame": 1600
+  },
+  "traceAtZero": [
+    {
+      "phase": 100,
+      "kind": "table-source-start",
+      "column": null,
+      "sourceOrder": 0
+    },
+    {
+      "phase": 200,
+      "kind": "table-row-evaluate",
+      "column": "noteVolume",
+      "sourceOrder": 1
+    },
+    {
+      "phase": 200,
+      "kind": "table-row-evaluate",
+      "column": "fx1",
+      "sourceOrder": 2
+    },
+    {
+      "phase": 200,
+      "kind": "table-row-evaluate",
+      "column": "fx3",
+      "sourceOrder": 4
+    }
+  ]
+}

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05080d">
+  <meta name="description" content="BRKTRK Web v2 tracker workstation">
+  <title>BRKTRK Web v2</title>
+  <style id="bootstrapSurfaceGuard">
+    body:not([data-bootstrap-surface="ready"]):not([data-bootstrap-surface="fixture-visible"]):not([data-bootstrap-input="ready"]) #appShell {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    body:not([data-bootstrap-surface]):not([data-bootstrap-input="ready"])::before {
+      content: "BRKTRK · LOADING…";
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: grid;
+      place-items: center;
+      background: #05080d;
+      color: #dce7f2;
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+  </style>
+  <link rel="manifest" href="./manifest.webmanifest?v=0.9.0">
+  <link rel="icon" href="./icon.svg?v=0.9.0" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css?v=0.9.0">
+  <link rel="stylesheet" href="./p2.css?v=0.9.0">
+  <link rel="stylesheet" href="./p3.css?v=0.9.0">
+  <link rel="stylesheet" href="./p3-0-1.css?v=0.9.0">
+  <link rel="stylesheet" href="./p35.css?v=0.9.0">
+  <link rel="stylesheet" href="./phrase-fx-surface.css?v=0.9.0">
+</head>
+<body>
+  <div id="appShell" class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <span class="brand">BRKTRK</span>
+        <span class="edition">WEB v2</span>
+        <button id="projectName" class="project-name" type="button" title="Rename project">UNTITLED 01</button>
+      </div>
+
+      <div class="transport-cluster" aria-label="Transport">
+        <button id="playButton" class="transport-button play" type="button" aria-pressed="false">
+          <span aria-hidden="true">▶</span><span id="playLabel">PLAY</span>
+        </button>
+        <button id="stopButton" class="transport-button stop" type="button">
+          <span aria-hidden="true">■</span><span>STOP</span>
+        </button>
+        <output id="outputOverload" class="output-overload" role="status"
+          aria-label="Master output exceeds 0 dBFS" title="Output over 0 dBFS — lower Track gain" hidden>OVER</output>
+      </div>
+
+      <div class="tempo-cluster" aria-label="Tempo">
+        <button id="tempoDown" class="icon-button" type="button" aria-label="Decrease tempo">−</button>
+        <button id="tempoButton" class="tempo-button" type="button" aria-label="Tempo">
+          <span>BPM</span><strong id="tempoValue">120</strong>
+        </button>
+        <button id="tempoUp" class="icon-button" type="button" aria-label="Increase tempo">+</button>
+      </div>
+
+      <!-- The group already carries aria-label="Playback scope", so a visible
+           "PLAY:" was decoration only: it named the group a second time, in
+           28px of the bar's most contested row, for readers who already had
+           the name. The scope buttons sit beside transport and say what they
+           are. -->
+      <div id="scopeSwitch" class="scope-switch" role="group" aria-label="Playback scope">
+        <button type="button" data-scope="song" aria-pressed="false">SONG</button>
+        <button type="button" data-scope="chain" aria-pressed="false">CHAIN</button>
+        <button type="button" data-scope="phrase" aria-pressed="true">PHRASE</button>
+      </div>
+
+      <div class="topbar-status">
+        <nav id="utilityPanels" class="utility-panels" aria-label="Editor panels">
+          <button type="button" data-panel="sound" aria-controls="inspectorPane" aria-pressed="false" title="Open or close Instrument panel">INST</button>
+          <button type="button" data-panel="mix" aria-controls="inspectorPane" aria-pressed="false" title="Open or close Mixer panel">MIX</button>
+        </nav>
+        <button id="bootButton" class="engine-button" type="button" aria-pressed="false">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span><b>PRODUCTION AUDIO</b><small>ENABLE AUDIO</small></span>
+        </button>
+        <div class="meter-pair" aria-label="Master output meter">
+          <i><b id="meterLeft"></b></i>
+          <i><b id="meterRight"></b></i>
+        </div>
+        <button id="helpButton" class="icon-button" type="button" aria-label="Help, keyboard map and license">?</button>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace" data-view="phrase">
+      <section id="songPane" class="pane song-pane" aria-labelledby="songTitle">
+        <header class="pane-header">
+          <div>
+            <span class="eyebrow">ARRANGEMENT</span>
+            <h1 id="songTitle">SONG</h1>
+          </div>
+          <div id="songContext" class="pane-context"></div>
+        </header>
+        <div id="songGrid" class="tracker-grid song-grid" role="grid" aria-label="Song arrangement"></div>
+      </section>
+
+      <section id="patternPane" class="pane pattern-pane active-pane" aria-labelledby="patternTitle">
+        <header class="pane-header pattern-header">
+          <div>
+            <span class="eyebrow">LINKED EDITOR</span>
+            <h1 id="patternTitle">PATTERN</h1>
+          </div>
+          <div class="active-editor-copy">
+            <span id="activeEditorLabel">EDITING PHRASE</span>
+            <small id="patternContext"></small>
+          </div>
+        </header>
+
+        <div class="pattern-workspace">
+          <section class="subpane chain-subpane" aria-labelledby="chainTitle">
+            <header class="subpane-header">
+              <div>
+                <span>CHAIN</span>
+                <strong id="chainTitle">00</strong>
+              </div>
+              <div class="subpane-actions">
+                <button id="chainPrev" class="micro-button" type="button" aria-label="Previous chain">‹</button>
+                <button id="chainNext" class="micro-button" type="button" aria-label="Next chain">›</button>
+              </div>
+            </header>
+            <div id="chainGrid" class="tracker-grid chain-grid" role="grid" aria-label="Chain editor"></div>
+          </section>
+
+          <section class="subpane phrase-subpane" aria-labelledby="phraseTitle">
+            <header class="subpane-header">
+              <div>
+                <span>PHRASE</span>
+                <strong id="phraseTitle">00</strong>
+              </div>
+              <div class="subpane-actions">
+                <button id="phraseConditionEdit" class="micro-button phrase-condition-button" type="button" aria-label="Edit selected Phrase row condition" title="Edit probability / iteration condition">COND</button>
+                <button id="phrasePrev" class="micro-button" type="button" aria-label="Previous phrase">‹</button>
+                <button id="phraseNext" class="micro-button" type="button" aria-label="Next phrase">›</button>
+              </div>
+            </header>
+            <div id="phraseGrid" class="tracker-grid phrase-grid" role="grid" aria-label="Phrase editor"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <aside id="inspectorPane" class="dock" data-dock="none" aria-labelledby="utilityPanelTitle">
+      <header class="dock-tabs-row">
+        <nav id="dockTabs" class="dock-tabs" aria-label="Context dock" hidden>
+          <button type="button" data-dock="sound">SOUND</button>
+          <button type="button" data-dock="mod">MOD</button>
+          <button type="button" data-dock="fx">FX</button>
+          <button type="button" data-dock="mix" class="active">MIX</button>
+        </nav>
+        <strong id="utilityPanelTitle" class="utility-panel-title">MIXER</strong>
+        <div id="selectionBreadcrumb" class="selection-breadcrumb"></div>
+        <button id="previewButton" class="preview-button" type="button">PREVIEW NOTE</button>
+      </header>
+
+      <section id="soundDock" class="dock-panel sound-dock" aria-labelledby="inspectorTitle">
+        <div class="sound-heading">
+          <span class="eyebrow">INSTRUMENT CONTEXT</span>
+          <h2 id="inspectorTitle">INST 00</h2>
+        </div>
+        <div id="instrumentInspector" class="instrument-inspector"></div>
+      </section>
+
+      <section id="mixerSection" class="dock-panel mixer-section" aria-labelledby="mixerTitle">
+        <h2 id="mixerTitle" class="visually-hidden">Track mixer</h2>
+        <div id="mixer" class="mixer"></div>
+      </section>
+
+      <section id="placeholderDock" class="dock-panel placeholder-dock" hidden>
+        <span class="eyebrow">WEB v2 SHELL</span>
+        <strong>THIS WORKSPACE WILL ONLY SHOW ENGINE-BACKED CONTROLS.</strong>
+      </section>
+    </aside>
+
+    <footer class="command-bar">
+      <div id="statusLine" class="status-line">READY · AUDIO DISABLED</div>
+      <div id="editBreadcrumb" class="edit-breadcrumb">EDIT · TRACK 1 · SONG 00 · CHAIN 00 · PHRASE 00 · ROW 00 · NOTE ---</div>
+      <div class="key-legend" aria-label="Keyboard shortcuts">
+        <kbd>↑↓←→</kbd><span>MOVE</span>
+        <kbd>A</kbd><span>OPT</span>
+        <kbd>S</kbd><span>EDIT</span>
+        <kbd>Z</kbd><span>SHIFT</span>
+        <kbd>X</kbd><span>PLAY</span>
+      </div>
+    </footer>
+
+    <nav id="mobileTabs" class="mobile-tabs" aria-label="Workspace">
+      <button type="button" data-view="song"><span>≡</span>SONG</button>
+      <button type="button" data-view="chain"><span>⌘</span>CHAIN</button>
+      <button type="button" data-view="phrase" class="active"><span>⌗</span>PHRASE</button>
+      <button type="button" data-view="sound"><span>∿</span>SOUND</button>
+      <button type="button" data-view="mix"><span>≋</span>MIX</button>
+    </nav>
+
+  </div>
+
+  <dialog id="helpDialog" class="help-dialog">
+    <form method="dialog">
+      <header>
+        <div><span class="eyebrow">M8-STYLE INPUT</span><h2>Keyboard map</h2></div>
+        <button class="icon-button" value="close" aria-label="Close">×</button>
+      </header>
+      <div class="shortcut-grid">
+        <kbd>Arrows</kbd><span>Move inside the current Song, Chain or Phrase grid</span>
+        <kbd>S + ←/→</kbd><span>Change the current value by a small step</span>
+        <kbd>S + ↑/↓</kbd><span>Change the current value by a large semantic step</span>
+        <kbd>Z + →</kbd><span>Open the selected Chain, Phrase or Sound context</span>
+        <kbd>Z + ←</kbd><span>Return to the exact parent cell</span>
+        <kbd>Z + ↓ / ↑</kbd><span>Open Mix / return from Mix</span>
+        <kbd>S</kbd><span>Insert/edit; double Edit allocates a fresh Chain or Phrase</span>
+        <kbd>A + S</kbd><span>Clear/reset; on an empty Note insert Note Off</span>
+        <kbd>A + arrows</kbd><span>Change Track or structural context</span>
+        <kbd>X</kbd><span>Play/stop the selected Song, Chain or Phrase scope</span>
+        <kbd>Z + X</kbd><span>Continue or queue Song from the selected position</span>
+        <kbd>Ctrl/Cmd + Enter</kbd><span>Insert blank Phrase row(s), shifting down and truncating at 0F</span>
+        <kbd>Ctrl/Cmd + Backspace</kbd><span>Delete selected/current Phrase row(s), shifting up</span>
+        <kbd>Ctrl/Cmd + D</kbd><span>Duplicate selected/current Song, Chain or Phrase row(s) directly below</span>
+      </div>
+      <p class="dialog-note">On desktop, PLAY: AUTO follows the active Song, Chain or Phrase editor; choosing SONG, CHAIN or PHRASE fixes what Play starts for the current session. FOLLOW PLAYBACK lets the editor move with playback. FOLLOW PAUSED means manual browsing has temporarily paused following; press it to resume. Turn FOLLOW PLAYBACK off when you want the editor to stay where you put it.</p>
+      <p class="dialog-note">On phone, tap a Note once to select it and tap the selected Note again—or use EDIT NOTE—to open the chromatic Note Editor.</p>
+      <section id="legalNotice" class="dialog-note" aria-labelledby="legalNoticeTitle">
+        <h3 id="legalNoticeTitle">License &amp; legal</h3>
+        <p><strong>BRKTRK Copyright © 2026 Ilya Tolstoukhov / Myldy design / @myldy20.</strong></p>
+        <p>Original BRKTRK source code is licensed under GNU GPL v3 only (GPL-3.0-only). You may use, study, change and redistribute covered code under the license terms. Separately supplied sound engines and third-party materials have their own notices.</p>
+        <p><a href="./LICENSE.txt" target="_blank" rel="noopener">GNU GPL v3 license</a> · <a href="./NOTICE.txt" target="_blank" rel="noopener">Notice &amp; third-party terms</a></p>
+        <p>Earlier copies remain governed by their accompanying license terms. Product identity and trademarks do not imply endorsement of unofficial builds.</p>
+      </section>
+    </form>
+  </dialog>
+
+  <script src="./bootstrap-input-gate.js?v=0.9.0"></script>
+  <script src="./physical-candidate-storage-scope.js?v=0.9.0"></script>
+  <template id="browserWriterRuntime">
+  <script src="./production-instrument-domain.js?v=0.9.0"></script>
+  <script src="./parameter-event-domain.js?v=0.9.0"></script>
+  <script src="./project-storage.js?v=0.9.0"></script>
+  <script src="./app-model.js?v=0.9.0"></script>
+  <script src="./project-storage-runtime.js?v=0.9.0"></script>
+  <script src="./audio-readiness.js?v=0.9.0"></script>
+  <script src="./p3-contract.js?v=0.9.0"></script>
+  <script src="./app-input.js?v=0.9.0"></script>
+  <script src="./phrase-condition-presentation.js?v=0.9.0"></script>
+  <script src="./app-render.js?v=0.9.0"></script>
+  <script src="./phrase-fx-surface.js?v=0.9.0"></script>
+  <script src="./mixer-transport-safety.js?v=0.9.0"></script>
+  <script src="./app-bind.js?v=0.9.0"></script>
+  <script src="./p2.js?v=0.9.0"></script>
+  <script src="./p3.js?v=0.9.0"></script>
+  <script src="./p3-0-1.js?v=0.9.0"></script>
+  <script src="./playback-context-policy.js?v=0.9.0"></script>
+  <script src="./p35-context-transport.js?v=0.9.0"></script>
+  <script src="./song-playback-gate.js?v=0.9.0"></script>
+  </template>
+  <script src="./browser-writer-authority.js?v=0.9.0"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>M4.2B rectangular selection clipboard browser smoke</title>
+  <link rel="stylesheet" href="./selection-clipboard.css">
+</head>
+<body>
+  <main id="grids"></main>
+  <footer class="command-bar">
+    <nav id="p34TouchActions"><button type="button">EDIT</button></nav>
+  </footer>
+  <strong id="result">PENDING</strong>
+
+  <script>
+    window.__m42bBootErrors = [];
+    window.addEventListener("error", (event) => {
+      window.__m42bBootErrors.push(String(event?.error?.stack ?? event?.error?.message ?? event?.message ?? "unknown browser bootstrap error"));
+    });
+  </script>
+  <script src="./production-instrument-domain.js"></script>
+  <script src="./track-insert-fx-domain.js"></script>
+  <script src="./stores.js"></script>
+  <script src="./phrase-fx-domain.js"></script>
+  <script src="./parameter-event-domain.js"></script>
+  <script>
+    (() => {
+      const emptyStep = () => ({ note: -1, velocity: 100, instrument: -1, fx: [{ command: 0, value: 0 }, { command: 0, value: 0 }, { command: 0, value: 0 }] });
+      const makeStep = (row) => ({
+        note: row === 0 ? 48 : row === 1 ? 52 : -1,
+        velocity: 90 + row,
+        instrument: row < 2 ? row + 2 : -1,
+        fx: [
+          { command: row === 0 ? 4 : row === 1 ? 5 : 0, value: row === 0 ? 0x40 : row === 1 ? 0x60 : 0 },
+          { command: row === 0 ? 0xE7 : 0, value: row === 0 ? 0xC4 : 0 },
+          { command: 0, value: 0 },
+        ],
+      });
+      const chain = () => Array.from({ length: 16 }, () => ({ phrase: -1, transpose: 0 }));
+      const chain0 = chain();
+      chain0[0] = { phrase: 0, transpose: 3 };
+      chain0[1] = { phrase: 1, transpose: -5 };
+      window.model = {
+        schemaVersion: 2,
+        projectName: "M42B BROWSER",
+        tempo: 120,
+        song: Array.from({ length: 64 }, () => Array(8).fill(-1)),
+        chains: { 0: chain0, 1: chain(), 2: chain(), 3: chain() },
+        phrases: { 0: Array.from({ length: 16 }, (_, row) => makeStep(row)), 1: Array.from({ length: 16 }, emptyStep) },
+        instruments: Array.from({ length: 16 }, (_, id) => ({ id })),
+      };
+      model.song[0][0] = 0; model.song[0][1] = 1; model.song[1][0] = 2; model.song[1][1] = 3;
+      window.state = {
+        view: "phrase", chain: 0, chainRow: 0, phrase: 0, phraseRow: 0, songRow: 0, track: 0,
+        focus: { pane: "phrase", row: 0, col: 0 }, p3: { activeWorkspace: "phrase" },
+      };
+      window.BRKTRKStores = BRKTRKStoreTypes.createStores({ model, state, trackCount: 8 });
+      window.setStatus = (message) => { document.body.dataset.status = message; };
+      window.renderAll = () => {};
+      window.__diagnostics = new Map();
+      window.BRKTRKDiagnostics = { registerSection(name, provider) { window.__diagnostics.set(name, provider); } };
+      window.__phone = true;
+      window.matchMedia = () => ({ matches: window.__phone, addEventListener() {}, removeEventListener() {} });
+      window.navigator.vibrate = () => true;
+      window.BRKTRKTouchActions = { refresh() { const bar = document.querySelector("#p34TouchActions"); if (bar) bar.hidden = false; } };
+
+      const specs = { song: [64, 8], chain: [16, 2], phrase: [16, 9] };
+      const grids = document.querySelector("#grids");
+      for (const [pane, [rows, cols]] of Object.entries(specs)) {
+        const grid = document.createElement("section");
+        grid.id = `${pane}Grid`;
+        for (let row = 0; row < rows; row += 1) {
+          const rowElement = document.createElement("div");
+          rowElement.dataset.rowPane = pane;
+          rowElement.dataset.row = String(row);
+          for (let col = 0; col < cols; col += 1) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.pane = pane;
+            button.dataset.row = String(row);
+            button.dataset.col = String(col);
+            button.textContent = `${pane}:${row}:${col}`;
+            rowElement.append(button);
+          }
+          grid.append(rowElement);
+        }
+        grids.append(grid);
+      }
+
+      const listeners = new Set();
+      window.BRKTRKCommands = {
+        installed: true,
+        async dispatch(command) {
+          if (command.type !== "cursor.select") throw new Error(`Unexpected fixture command ${command.type}`);
+          state.focus = { pane: command.pane, row: Number(command.row), col: Number(command.col) };
+          if (command.pane === "phrase") state.phraseRow = Number(command.row);
+          if (command.pane === "chain") state.chainRow = Number(command.row);
+          if (command.pane === "song") { state.songRow = Number(command.row); state.track = Number(command.col); }
+          const record = { command: { ...command } };
+          for (const listener of [...listeners]) listener(record);
+          return { ok: true };
+        },
+        subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+      };
+      document.addEventListener("click", (event) => {
+        const cell = event.target.closest('[data-pane][data-row][data-col]');
+        if (!cell) return;
+        BRKTRKCommands.dispatch({ type: "cursor.select", pane: cell.dataset.pane, row: Number(cell.dataset.row), col: Number(cell.dataset.col), focus: false, source: "pointer-cell" });
+      });
+    })();
+  </script>
+  <script src="./project-phrase-step.js"></script>
+  <script src="./project-structure.js"></script>
+  <script>
+    BRKTRKProjectPhraseStep.install(BRKTRKStores.project);
+    BRKTRKProjectStructure.install(BRKTRKStores.project);
+  </script>
+  <script src="./undo-redo.js"></script>
+  <script src="./selection-clipboard.js"></script>
+  <script>
+    (async () => {
+      const result = document.querySelector("#result");
+      const assert = (condition, message) => { if (!condition) throw new Error(message); };
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const key = (code, options = {}) => document.dispatchEvent(new KeyboardEvent("keydown", { code, key: options.key ?? code, bubbles: true, cancelable: true, ...options }));
+      const focus = (pane, row, col) => BRKTRKCommands.dispatch({ type: "cursor.select", pane, row, col, source: "fixture" });
+      try {
+        if (!window.BRKTRKSelectionClipboard) {
+          const prerequisites = {
+            domain: Boolean(window.BRKTRKSelectionClipboardDomain),
+            commands: Boolean(window.BRKTRKCommands?.installed),
+            projectStore: Boolean(window.BRKTRKStores?.project),
+            phraseSteps: Boolean(window.BRKTRKStores?.project?.phraseSteps?.read),
+            structure: Boolean(window.BRKTRKStores?.project?.structure?.readSongCell),
+            navigation: Boolean(window.BRKTRKStores?.navigation?.emit),
+            storeTypes: Boolean(window.BRKTRKStoreTypes?.createNavigationChangeSet),
+            bootErrors: window.__m42bBootErrors,
+          };
+          throw new Error(`selection controller did not install · ${JSON.stringify(prerequisites)}`);
+        }
+        assert(BRKTRKSelectionClipboard.installed, "selection controller did not install");
+        assert(BRKTRKCommands.selectionClipboard === BRKTRKSelectionClipboard, "controller not namespaced under semantic commands");
+        assert(BRKTRKStores.navigation.selectionClipboard === BRKTRKSelectionClipboard, "controller not Navigation-owned");
+        assert(window.__diagnostics.has("selectionClipboard"), "selection clipboard diagnostics missing");
+
+        const note0 = document.querySelector('[data-pane="phrase"][data-row="0"][data-col="0"]');
+        note0.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 7, button: 0 }));
+        await wait(540);
+        note0.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 7, button: 0 }));
+        let selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.active && selection.pane === "phrase" && selection.rowCount === 1 && selection.colCount === 1, "phone long-press did not start a Phrase cell rectangle");
+        document.querySelector('[data-pane="phrase"][data-row="1"][data-col="1"]').click();
+        await wait(0);
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.rowCount === 2 && selection.colCount === 2, "phone tap did not extend rectangular selection");
+        document.querySelector("#m42bCopy").click();
+        await wait(0);
+        assert(JSON.stringify(BRKTRKSelectionClipboard.getClipboardMetadata().fields) === JSON.stringify(["note", "velocity"]), "phone Note+Velocity field identity lost");
+        assert(BRKTRKSelectionClipboard.snapshot().pasteTarget.armed, "phone Copy did not arm direct paste targeting");
+
+        const phrase4Before = structuredClone(BRKTRKStores.project.phraseSteps.read(0, 4));
+        document.querySelector('[data-pane="phrase"][data-row="4"][data-col="0"]').click();
+        await wait(0);
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.startRow === 4 && selection.endRow === 4 && selection.startCol === 0 && selection.endCol === 0, "phone post-Copy tap did not collapse selection to paste target");
+        assert(BRKTRKSelectionClipboard.getClipboardMetadata().rowCount === 2 && BRKTRKSelectionClipboard.getClipboardMetadata().colCount === 2, "phone retargeting lost clipboard rectangle");
+        assert(BRKTRKStores.project.phraseSteps.read(0, 4).note === phrase4Before.note, "paste-target tap mutated Phrase before Paste");
+        document.querySelector("#m42bPaste").click();
+        await wait(0);
+        assert(BRKTRKStores.project.phraseSteps.read(0, 4).note === 48 && BRKTRKStores.project.phraseSteps.read(0, 4).velocity === 90, "phone direct-target Paste failed");
+        document.querySelector('[data-pane="phrase"][data-row="8"][data-col="0"]').click();
+        await wait(0);
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.startRow === 8 && selection.endRow === 8 && BRKTRKSelectionClipboard.snapshot().pasteTarget.armed, "phone repeated paste targeting did not stay armed");
+
+        document.querySelector("#m42bDone").click();
+        await focus("phrase", 0, 3);
+        await BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 0, col: 3, source: "fixture-phone-fx" });
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.startCol === 3 && selection.endCol === 4 && selection.colCount === 2, "phone FX1 did not group command+value");
+        assert(!BRKTRKSelectionClipboard.snapshot().pasteTarget.armed, "explicit phone selection did not disarm paste-target mode");
+        await BRKTRKSelectionClipboard.dispatch({ type: "clipboard.copy", source: "fixture-phone-fx" });
+        assert(JSON.stringify(BRKTRKSelectionClipboard.getClipboardMetadata().fields) === JSON.stringify(["fx1.command", "fx1.value"]), "phone grouped FX clipboard lost pair identity");
+
+        await BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "fixture" });
+        await focus("phrase", 7, 2);
+        await BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 7, rowMode: true, source: "fixture" });
+        assert(BRKTRKSelectionClipboard.getSelection().colCount === 9 && BRKTRKSelectionClipboard.getSelection().rowMode, "whole-row mode no longer spans all Phrase fields");
+        await BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "fixture" });
+
+        window.__phone = false;
+        await focus("song", 0, 0);
+        key("ArrowRight", { key: "ArrowRight", shiftKey: true }); await wait(0);
+        key("ArrowDown", { key: "ArrowDown", shiftKey: true }); await wait(0);
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.pane === "song" && selection.rowCount === 2 && selection.colCount === 2, "Song Shift+Arrow rectangle failed");
+        key("KeyC", { key: "c", ctrlKey: true }); await wait(0);
+        assert(BRKTRKSelectionClipboard.getClipboardMetadata().referenceSemantics === "shared-reference", "Song clipboard must preserve reference semantics");
+        const chainCount = Object.keys(BRKTRKStores.project.getState().chains).length;
+        document.querySelector('[data-pane="song"][data-row="2"][data-col="2"]').click(); await wait(0);
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.startRow === 2 && selection.endRow === 2 && selection.startCol === 2 && selection.endCol === 2, "Song post-Copy click did not retarget without Escape");
+        key("KeyV", { key: "v", ctrlKey: true }); await wait(0);
+        assert(model.song[2][2] === 0 && model.song[2][3] === 1 && model.song[3][2] === 2 && model.song[3][3] === 3, "Song rectangle paste lost Chain references");
+        assert(Object.keys(BRKTRKStores.project.getState().chains).length === chainCount, "Song rectangle paste silently cloned Chains");
+
+        key("Escape", { key: "Escape" });
+        state.chain = 0;
+        model.chains[0][4].transpose = 12; model.chains[0][5].transpose = 7;
+        await focus("chain", 0, 0);
+        key("ArrowDown", { key: "ArrowDown", shiftKey: true }); await wait(0);
+        key("KeyC", { key: "c", ctrlKey: true }); await wait(0);
+        document.querySelector('[data-pane="chain"][data-row="4"][data-col="0"]').click(); await wait(0);
+        selection = BRKTRKSelectionClipboard.getSelection();
+        assert(selection.startRow === 4 && selection.endRow === 4 && selection.startCol === 0 && selection.endCol === 0, "Chain post-Copy click did not retarget without Escape");
+        key("KeyV", { key: "v", ctrlKey: true }); await wait(0);
+        assert(model.chains[0][4].phrase === 0 && model.chains[0][5].phrase === 1, "Chain rectangle paste lost Phrase references");
+        assert(model.chains[0][4].transpose === 12 && model.chains[0][5].transpose === 7, "Chain Phrase-only paste overwrote Transpose");
+
+        const diagnostic = window.__diagnostics.get("selectionClipboard")();
+        assert(diagnostic.clipboard.available, "diagnostic clipboard metadata incorrect");
+        assert(typeof diagnostic.pasteTarget.armed === "boolean", "paste-target diagnostic state missing");
+        assert(!Object.hasOwn(diagnostic.clipboard, "cells"), "diagnostics leaked clipboard payload");
+        assert(!Object.hasOwn(state.p3.internalClipboard, "cells"), "Navigation state leaked clipboard payload");
+        result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+      } catch (error) {
+        console.error(error);
+        result.textContent = `FAILED: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>

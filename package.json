@@ -1,0 +1,16 @@
+{
+  "name": "brktrk-web",
+  "version": "0.9.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "description": "Open-source browser-based music tracker",
+  "scripts": {
+    "test": "node scripts/verify-public-source.mjs",
+    "dev:engine": "node scripts/build-dev-engine-store.mjs",
+    "serve": "python3 -m http.server 8080 --directory web",
+    "test:browser": "bash scripts/public-browser-smoke.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

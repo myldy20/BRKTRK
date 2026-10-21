@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>M4.2B2P keyboard resolver smoke</title></head>
+<body>
+<strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+<input id="editable" value="text"><dialog id="helpDialog"></dialog>
+<script>
+window.state={phrase:0,chain:0,view:"song",focus:{pane:"song",row:0,col:0},p3:{activeWorkspace:"song",activeSheet:null}};
+window.__sheet=null; window.__selection=null; window.__phraseDispatched=[]; window.__structuralDispatched=[]; window.__statuses=[];
+window.BRKTRKStores={navigation:{entryState:{getActiveSheet:()=>window.__sheet}}};
+window.BRKTRKSelectionClipboard={getSelection:()=>window.__selection};
+window.BRKTRKPhraseRowOperations={installed:true,dispatch(command){window.__phraseDispatched.push(command);return Promise.resolve({ok:true});}};
+window.BRKTRKStructuralRowOperations={installed:true,dispatch(command){window.__structuralDispatched.push(command);return Promise.resolve({ok:true});}};
+window.BRKTRKDiagnostics={registerSection(){}};
+window.setStatus=(message,tone)=>window.__statuses.push({message,tone});
+</script>
+<script src="./keyboard-command-resolver.js"></script>
+<script>
+const result=document.querySelector("#result"); const editable=document.querySelector("#editable");
+function assert(condition,message){if(!condition) throw new Error(message);}
+function duplicateEvent(target=document,options={}){const event=new KeyboardEvent("keydown",{key:"d",code:"KeyD",ctrlKey:options.ctrlKey??true,metaKey:options.metaKey??false,bubbles:true,cancelable:true}); const notCancelled=target.dispatchEvent(event); return {event,notCancelled};}
+try {
+  const song=duplicateEvent();
+  assert(song.event.defaultPrevented,"Song Ctrl+D must be consumed");
+  assert(song.notCancelled===false,"Song Ctrl+D dispatch must report cancellation");
+  assert(window.__structuralDispatched.length===1,"Song Ctrl+D must dispatch one structural Duplicate");
+  assert(window.__structuralDispatched[0].type==="structure.rows.duplicate"&&window.__structuralDispatched[0].pane==="song","Song structural command mismatch");
+  assert(window.__phraseDispatched.length===0,"Song Ctrl+D must not mutate Phrase rows");
+
+  window.state.view="chain"; window.state.focus.pane="chain"; window.state.p3.activeWorkspace="chain";
+  const chain=duplicateEvent(document,{ctrlKey:false,metaKey:true});
+  assert(chain.event.defaultPrevented,"Chain Cmd+D must be consumed");
+  assert(window.__structuralDispatched.length===2&&window.__structuralDispatched[1].pane==="chain","Chain Cmd+D must dispatch one Chain Duplicate");
+  assert(window.__phraseDispatched.length===0,"Chain Cmd+D must not mutate Phrase rows");
+
+  window.state.view="phrase"; window.state.focus.pane="song"; window.state.p3.activeWorkspace="phrase"; window.__selection=null;
+  const staleParentFocus=duplicateEvent(document,{ctrlKey:false,metaKey:true});
+  assert(staleParentFocus.event.defaultPrevented,"Phrase workspace + Song focus Cmd+D must be consumed");
+  assert(window.__structuralDispatched.length===3&&window.__structuralDispatched[2].pane==="song","Canonical Song focus must own Duplicate despite wider Phrase workspace");
+  assert(window.__phraseDispatched.length===0,"Stale wider workspace must not duplicate hidden Phrase");
+
+  window.__selection={active:true,pane:"phrase",contextId:0,startRow:2,rowCount:2};
+  const selectedPhrase=duplicateEvent();
+  assert(selectedPhrase.event.defaultPrevented,"Matching Phrase selection Ctrl+D must be consumed");
+  assert(window.__phraseDispatched.length===1&&window.__phraseDispatched[0].type==="phrase.rows.duplicate","Matching Phrase selection must dispatch Phrase Duplicate");
+  window.__selection=null;
+
+  window.state.focus.pane="phrase";
+  const phrase=duplicateEvent();
+  assert(phrase.event.defaultPrevented,"Phrase Ctrl+D must be consumed");
+  assert(window.__phraseDispatched.length===2&&window.__phraseDispatched[1].type==="phrase.rows.duplicate","Phrase Ctrl+D must dispatch exactly once");
+
+  window.__sheet="note"; const sheet=duplicateEvent();
+  assert(sheet.event.defaultPrevented,"Contextual-sheet Ctrl+D must not leak to browser");
+  assert(window.__phraseDispatched.length===2&&window.__structuralDispatched.length===3,"Contextual sheet must block Duplicate");
+  assert(/OWNS INPUT/.test(window.__statuses.at(-1)?.message??""),"Contextual-sheet block status missing");
+  window.__sheet=null;
+
+  const editableEvent=duplicateEvent(editable);
+  assert(!editableEvent.event.defaultPrevented,"Editable target must retain its own shortcut behavior");
+  assert(window.__phraseDispatched.length===2&&window.__structuralDispatched.length===3,"Editable target must not dispatch Duplicate");
+
+  result.textContent="BRKTRK_BROWSER_TESTS_PASSED";
+  console.log("M4.2B2P tracker Duplicate resolver browser smoke passed");
+} catch(error){result.textContent=`BRKTRK_BROWSER_TESTS_FAILED: ${error.message}`;console.error(error);}
+</script>
+</body></html>

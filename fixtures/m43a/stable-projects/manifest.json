@@ -1,0 +1,69 @@
+{
+  "fixtureSet": "BRKTRK_M43A_STABLE_PROJECTS_V1",
+  "fixtureSetVersion": 1,
+  "outerFormat": {
+    "format": "BRKTRK_PROJECT",
+    "currentVersion": 1
+  },
+  "projectSchema": {
+    "currentVersion": 3,
+    "acceptedSources": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "recoveryJournal": {
+    "format": "BRKTRK_RECOVERY_JOURNAL",
+    "currentVersion": 1
+  },
+  "fixtures": [
+    {
+      "file": "format1-schema0.brktrk.json",
+      "sha256": "23f96e92f0b7c49caf8d50e70b0f1a724442584982238525a93332e779d36c1d",
+      "kind": "accept-project",
+      "sourceSchema": 0,
+      "targetSchema": 3
+    },
+    {
+      "file": "format1-schema1.brktrk.json",
+      "sha256": "8e9887d638dc60a0eb5f481f2c568c87909f85bd629e1e7cdac45358bb052fef",
+      "kind": "accept-project",
+      "sourceSchema": 1,
+      "targetSchema": 3
+    },
+    {
+      "file": "format1-schema2.brktrk.json",
+      "sha256": "9c0522f577221f1ab6c84ea58fff09d7bbf632ec9274ef3522f9ae3f83002a7e",
+      "kind": "accept-project",
+      "sourceSchema": 2,
+      "targetSchema": 3
+    },
+    {
+      "file": "format1-schema3.brktrk.json",
+      "sha256": "ee7d0302f2d1ee13e3d11dd2bce6af862470883f1a3b84169139ce86845c109e",
+      "kind": "accept-project",
+      "sourceSchema": 3,
+      "targetSchema": 3
+    },
+    {
+      "file": "recovery-v1.json",
+      "sha256": "3392a98630341b8e013a0d7cd67dc8f57e9c3bf76ad5962c453d19b6fc6b72fd",
+      "kind": "accept-recovery",
+      "targetSchema": 3
+    },
+    {
+      "file": "reject-format2.brktrk.json",
+      "sha256": "f2ef71f650c99a4727ef0649c98cac35714ff2429de9c88a76fd4e0ebc69db6b",
+      "kind": "reject-project",
+      "error": "Unsupported .brktrk format version 2"
+    },
+    {
+      "file": "reject-schema4.brktrk.json",
+      "sha256": "2fbf85e5d7d580ff481f46c95a4dab9ad77290034bf630ff3af80fd381b4e557",
+      "kind": "reject-project",
+      "error": "Unsupported project schema 4"
+    }
+  ]
+}

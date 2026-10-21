@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>BRKTRK K3C audio facade regression</title></head>
+<body><strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+<script>
+const result=document.querySelector('#result');
+function assert(value,message){if(!value)throw new Error(message)}
+const sent=[];
+const timelineCompiles=[];
+const executionCompiles=[];
+const audio={
+  ready:true,
+  context:{sampleRate:48000},
+  node:{port:{postMessage(message){sent.push(message)}}},
+};
+globalThis.BRKTRKProductionTimelineDomain={
+  TIMELINE_VERSION:1,
+  createTimelineRequest(program){
+    const mode=program?.mode==='track-plan'?'track-plan':'sequence';
+    return Object.freeze({version:1,mode,sequence:mode==='sequence'?{track:0,rowCount:program.steps.length,phraseRows:program.contexts.map(c=>c.phraseRow)}:null,tracks:mode==='track-plan'?[{track:0,rowCount:program.tracks[0].events.length,phraseRows:[0]}]:[],tableSources:[]});
+  },
+};
+globalThis.BRKTRKProductionTimelineTemplate={
+  compileRelativeTimeline(input){
+    assert(input.sampleRate===48000,'K3C adapter must prepare against active lexical audio context sampleRate');
+    const mode=input.program?.mode==='track-plan'?'track-plan':'sequence';
+    const prepared=Object.freeze({templateVersion:1,mode,sampleRate:input.sampleRate,marker:timelineCompiles.length+1});
+    timelineCompiles.push({input,prepared});
+    return prepared;
+  },
+};
+globalThis.BRKTRKProductionExecutionTemplate={
+  compilePreparedExecution({timelineTemplate,program}){
+    const mode=program?.mode==='track-plan'?'track-plan':'sequence';
+    const prepared=Object.freeze({executionVersion:1,mode,timelineMarker:timelineTemplate.marker,marker:executionCompiles.length+1});
+    executionCompiles.push({timelineTemplate,program,prepared});
+    return prepared;
+  },
+};
+// Production app-model.js uses exactly this browser shape: a top-level lexical
+// `const audio`, deliberately absent from globalThis. R1/R2 preparation domains
+// are globals loaded before the adapter by app-bind.js.
+assert(globalThis.audio===undefined,'fixture requires lexical audio to stay off globalThis');
+</script>
+<script src="./k3c-transport-adapter.js"></script>
+<script>
+try{
+  assert(globalThis.BRKTRKK3CTransportAdapter?.version===1,'K3C adapter must load against lexical production audio facade');
+  assert(document.body.dataset.timelineArchitecture==='k3c','K3C adapter must publish production timeline ownership marker');
+  audio.playPlan({mode:'track-plan',tracks:[{active:true,events:[{note:60,fx:[{command:4,value:1}]}],contexts:[{phraseRow:0}],startIndex:0}]},120,{id:'fixture',version:1,mode:'track-plan',scope:'song'});
+  assert(sent.length===1&&sent[0].type==='play-plan','adapter must replace the real lexical audio facade playPlan method');
+  assert(sent[0].plan?.timeline?.version===1&&sent[0].plan?.timeline?.mode==='track-plan','play-plan must carry a K3C timeline request into AudioWorklet');
+  assert(sent[0].plan?.tracks?.[0]?.events?.[0]?.fx?.[0]?.command===4,'compound Phrase FX must survive the adapter boundary');
+  assert(sent[0].timelineTemplate?.templateVersion===1&&sent[0].timelineTemplate?.sampleRate===48000,'play-plan must carry the prepared relative timeline compiled from the lexical audio context');
+  assert(sent[0].executionTemplate?.executionVersion===1&&sent[0].executionTemplate?.timelineMarker===sent[0].timelineTemplate.marker,'play-plan must carry the R2 prepared execution paired with its timeline template');
+  assert(timelineCompiles.length===1&&executionCompiles.length===1,'one play-plan must prepare one timeline and one execution template');
+  result.textContent='BRKTRK_BROWSER_TESTS_PASSED';
+}catch(error){console.error(error);result.textContent='BRKTRK_BROWSER_TESTS_FAILED: '+error.message}
+</script></body></html>

@@ -1,0 +1,211 @@
+/* BRKTRK Web 0.8.35 — explicit M4.1B Phrase FX command/value surface retained through M4.2B1 corrective. */
+
+/* Desktop/tablet retain the explicit command/value columns. */
+.phrase-grid {
+  --cols: 30px minmax(64px, 1.15fr) 44px 44px 52px 42px 52px 42px 52px 42px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.phrase-grid .grid-header,
+.phrase-grid .grid-row {
+  min-width: 500px;
+}
+
+.grid-cell.fx-value {
+  color: var(--amber);
+  font-weight: 800;
+}
+
+.grid-cell.fx-value.selected {
+  color: #15030b;
+}
+
+@media (max-width: 1279px) and (min-width: 761px) {
+  .phrase-grid {
+    --cols: 28px 60px 40px 40px 48px 40px 48px 40px 48px 40px;
+  }
+  .phrase-grid .grid-header,
+  .phrase-grid .grid-row {
+    min-width: 472px;
+  }
+}
+
+/*
+ * Phone contract: command+value is one visual FX slot. The schema remains the
+ * same three {command,value} pairs; only the portrait authoring surface is
+ * grouped so no horizontal discovery gesture is required.
+ */
+@media (max-width: 760px) {
+  .phrase-grid {
+    --cols: 22px minmax(56px, 1.25fr) 34px 34px repeat(3, minmax(52px, .9fr));
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  .phrase-grid .grid-header,
+  .phrase-grid .grid-row {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Header positions include ROW. Hide VAL1/VAL2/VAL3; values are rendered
+     inside the corresponding FX1/FX2/FX3 command cells on phone. */
+  .phrase-grid .grid-header > :nth-child(6),
+  .phrase-grid .grid-header > :nth-child(8),
+  .phrase-grid .grid-header > :nth-child(10),
+  .phrase-grid [data-pane="phrase"][data-col="4"],
+  .phrase-grid [data-pane="phrase"][data-col="6"],
+  .phrase-grid [data-pane="phrase"][data-col="8"] {
+    display: none !important;
+  }
+
+  .phrase-grid .grid-header > span {
+    padding-inline: 1px;
+    font-size: 6.5px;
+    letter-spacing: 0;
+  }
+
+  .phrase-grid .grid-cell {
+    padding-inline: 1px;
+    font-size: 8.5px;
+    touch-action: manipulation;
+  }
+
+  .phrase-grid .grid-cell.fx,
+  .phrase-grid [data-phone-fx-slot] {
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (max-width: 360px) {
+  .phrase-grid {
+    --cols: 20px minmax(50px, 1.2fr) 31px 31px repeat(3, minmax(48px, .9fr));
+  }
+  .phrase-grid .grid-header > span { font-size: 6px; }
+  .phrase-grid .grid-cell { font-size: 8px; }
+}
+
+/* Grouped phone FX editor. */
+.m41b-phone-fx-dock { display: none; }
+
+@media (max-width: 760px) {
+  .m41b-phone-fx-dock {
+    position: fixed;
+    z-index: 68;
+    left: max(5px, env(safe-area-inset-left));
+    right: max(5px, env(safe-area-inset-right));
+    bottom: calc(60px + max(4px, env(safe-area-inset-bottom)));
+    box-sizing: border-box;
+    max-height: calc(100dvh - 78px);
+    padding: 9px;
+    gap: 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(7, 13, 20, .99);
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, .72);
+    backdrop-filter: blur(12px);
+  }
+  .m41b-phone-fx-dock[aria-hidden="false"] { display: grid; }
+
+  .m41b-phone-fx-header {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .m41b-phone-fx-header span {
+    display: block;
+    color: var(--pink);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .08em;
+  }
+  .m41b-phone-fx-header strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font: 750 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .m41b-phone-fx-header > button {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: 20px;
+  }
+
+  .m41b-phone-fx-command-choices {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .m41b-phone-fx-command-choices button,
+  .m41b-phone-fx-value-row button,
+  .m41b-phone-fx-value-row input,
+  .m41b-phone-fx-actions button {
+    min-width: 0;
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font: 900 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .m41b-phone-fx-command-choices button.active {
+    border-color: var(--pink);
+    background: rgba(255, 63, 146, .16);
+    color: var(--pink);
+  }
+
+  .m41b-phone-fx-unknown {
+    padding: 8px 10px;
+    border: 1px solid var(--amber);
+    border-radius: 5px;
+    color: var(--amber);
+    font: 800 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .m41b-phone-fx-value-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(46px, .75fr)) minmax(72px, 1.2fr) repeat(2, minmax(46px, .75fr));
+    gap: 5px;
+  }
+  .m41b-phone-fx-value-row input {
+    padding: 0 8px;
+    text-align: center;
+    color: var(--cyan);
+    font-size: 18px;
+    outline: none;
+  }
+  .m41b-phone-fx-value-row input:disabled {
+    color: var(--dim);
+    opacity: .7;
+  }
+
+  .m41b-phone-fx-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.45fr;
+    gap: 6px;
+  }
+  .m41b-phone-fx-actions .primary {
+    border-color: var(--pink);
+    background: rgba(255, 63, 146, .16);
+    color: var(--pink);
+  }
+
+  body.m41b-phone-fx-open .command-bar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  body.m41b-phone-fx-open .p32-value-dock,
+  body.m41b-phone-fx-open .p3-note-dock {
+    display: none !important;
+  }
+}

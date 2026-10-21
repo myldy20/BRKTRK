@@ -1,0 +1,52 @@
+# BRKTRK — licensing and third-party notices
+
+Copyright © 2026 Ilya Tolstoukhov / Myldy design / @myldy20 for original BRKTRK contributions.
+
+Original BRKTRK host source code is licensed under the GNU General Public License,
+version 3 only (SPDX: GPL-3.0-only). See the accompanying LICENSE.txt file.
+The browser build includes LICENSE.txt with the same full license text.
+
+Some independent engines, libraries, copied/adapted routines and assets have
+separate copyrights and licenses. The BRKTRK GPL grant does not purport to
+relicense those third-party works. Preserve their notices and comply with
+the terms applicable to each distributed component.
+
+BRKTRK names, logos and product identity are not a grant to impersonate
+an official release or imply endorsement. This notice does not restrict the
+rights granted by GPL-3.0-only to the covered source code.
+
+Earlier releases remain governed by the licensing terms supplied with those
+specific copies. Relicensing this development line does not revoke their grants.
+
+## Third-party attributions
+
+Track Insert FX Wave A donor notice
+
+Portions of web/track-insert-fx-domain.js adapt the track insert DSP parameter
+semantics and inline Chorus, Phaser, Saturation and Bitcrusher algorithms from
+ChooChooTracker, chipnomad_lib/insert_fx.cpp, audited source commit
+859c69ac30ad8e97d2d097c2de18d194ce1ecb85:
+https://github.com/paiheulevrai/Choochootracker
+
+MIT License
+
+Copyright (c) 2025 ChipNomad
+Copyright (c) 2026 paiheulevrai
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

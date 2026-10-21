@@ -1,0 +1,326 @@
+{
+  "contract": {
+    "version": 1,
+    "grooveRows": 16,
+    "supportedPpqn": [
+      24,
+      48,
+      96,
+      192
+    ],
+    "cursorPolicies": {
+      "RESET": "reset",
+      "PRESERVE": "preserve"
+    },
+    "defaultGroove": {
+      "ppqn": 24,
+      "rows": [
+        6,
+        6
+      ]
+    }
+  },
+  "default24": {
+    "boundaryFrames": [
+      0,
+      5513,
+      11025,
+      16538,
+      22050,
+      27563,
+      33075,
+      38588
+    ],
+    "eventFrames": [
+      0,
+      5513,
+      11025,
+      16538,
+      22050,
+      27563,
+      33075,
+      38588
+    ],
+    "nextBoundaryFrames": [
+      5513,
+      11025,
+      16538,
+      22050,
+      27563,
+      33075,
+      38588,
+      44100
+    ],
+    "ticks": [
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6
+    ],
+    "skipped": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "endFrame": 44100
+  },
+  "swing24": {
+    "boundaryFrames": [
+      0,
+      7000,
+      12000,
+      19000,
+      24000,
+      31000,
+      36000,
+      43000
+    ],
+    "eventFrames": [
+      0,
+      7000,
+      12000,
+      19000,
+      24000,
+      31000,
+      36000,
+      43000
+    ],
+    "nextBoundaryFrames": [
+      7000,
+      12000,
+      19000,
+      24000,
+      31000,
+      36000,
+      43000,
+      48000
+    ],
+    "ticks": [
+      7,
+      5,
+      7,
+      5,
+      7,
+      5,
+      7,
+      5
+    ],
+    "skipped": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "endFrame": 48000
+  },
+  "skip24": {
+    "boundaryFrames": [
+      0,
+      6000,
+      6000,
+      12000,
+      18000,
+      18000,
+      24000,
+      30000
+    ],
+    "eventFrames": [
+      0,
+      6000,
+      6000,
+      12000,
+      18000,
+      18000,
+      24000,
+      30000
+    ],
+    "nextBoundaryFrames": [
+      6000,
+      6000,
+      12000,
+      18000,
+      18000,
+      24000,
+      30000,
+      30000
+    ],
+    "ticks": [
+      6,
+      0,
+      6,
+      6,
+      0,
+      6,
+      6,
+      0
+    ],
+    "skipped": [
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ],
+    "endFrame": 30000
+  },
+  "tempoSegments": {
+    "boundaryFrames": [
+      0,
+      6000,
+      12000,
+      24000,
+      36000,
+      48000,
+      52000,
+      56000
+    ],
+    "eventFrames": [
+      0,
+      6000,
+      12000,
+      24000,
+      36000,
+      48000,
+      52000,
+      56000
+    ],
+    "nextBoundaryFrames": [
+      6000,
+      12000,
+      24000,
+      36000,
+      48000,
+      52000,
+      56000,
+      60000
+    ],
+    "ticks": [
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6
+    ],
+    "skipped": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "endFrame": 60000
+  },
+  "micro192": {
+    "boundaryFrames": [
+      0,
+      6000,
+      12000,
+      18000
+    ],
+    "eventFrames": [
+      0,
+      6016,
+      11984,
+      18047
+    ],
+    "nextBoundaryFrames": [
+      6000,
+      12000,
+      18000,
+      24000
+    ],
+    "ticks": [
+      48,
+      48,
+      48,
+      48
+    ],
+    "skipped": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "endFrame": 24000,
+    "microUnits": [
+      0,
+      1,
+      -1,
+      3
+    ]
+  },
+  "independent": [
+    {
+      "track": 0,
+      "boundaryFrames": [
+        0,
+        6000,
+        12000,
+        18000,
+        24000,
+        30000
+      ],
+      "endFrame": 36000
+    },
+    {
+      "track": 1,
+      "boundaryFrames": [
+        0,
+        8000,
+        16000,
+        24000,
+        32000,
+        40000
+      ],
+      "endFrame": 48000
+    }
+  ],
+  "sameFrameTrace": [
+    [
+      0,
+      1,
+      "track-row-boundary",
+      0
+    ],
+    [
+      0,
+      2,
+      "track-row-boundary",
+      0
+    ],
+    [
+      1,
+      1,
+      "track-row-boundary",
+      0
+    ],
+    [
+      1,
+      2,
+      "track-row-boundary",
+      0
+    ]
+  ]
+}

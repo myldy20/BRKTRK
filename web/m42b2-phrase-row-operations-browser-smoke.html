@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>M4.2B2 Phrase row operations browser smoke</title></head>
+<body>
+  <strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+  <iframe id="app" src="./index.html" width="390" height="844" title="BRKTRK M4.2B2 test" style="position:absolute;left:0;top:30px;border:0"></iframe>
+  <script>
+    const result = document.querySelector("#result");
+    const frame = document.querySelector("#app");
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    async function waitFor(predicate, message, timeoutMs = 45000) {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (predicate()) return;
+        await wait(40);
+      }
+      throw new Error(typeof message === "function" ? message() : message);
+    }
+
+    frame.addEventListener("load", () => setTimeout(async () => {
+      try {
+        const app = frame.contentWindow;
+        const doc = frame.contentDocument;
+        const run = (source) => app.eval(source);
+        const authoritativeReady = "Boolean(document.body.dataset.bootstrapSurface === 'ready' && document.body.dataset.commandArchitecture === 'p3.4' && globalThis.BRKTRKPhraseRowOperations?.installed && globalThis.BRKTRKSelectionClipboard?.installed && globalThis.BRKTRKUndoRedo?.installed && globalThis.BRKTRKStores?.project?.phraseSteps && globalThis.BRKTRKStores?.navigation?.entryState && globalThis.BRKTRKBootstrapInput?.isBlocked?.() === false && document.querySelector('#appShell')?.inert === false)";
+        const readinessSnapshot = () => run(`(() => ({
+          bootstrapSurface: document.body.dataset.bootstrapSurface ?? null,
+          commandArchitecture: document.body.dataset.commandArchitecture ?? null,
+          blocked: globalThis.BRKTRKBootstrapInput?.isBlocked?.() ?? null,
+          bootstrap: globalThis.BRKTRKBootstrapInput?.snapshot?.() ?? null,
+          dynamicRuntime: globalThis.BRKTRKDynamicRuntimeStartup?.snapshot?.() ?? null,
+          phraseRowOperations: globalThis.BRKTRKPhraseRowOperations?.installed === true,
+          selectionClipboard: globalThis.BRKTRKSelectionClipboard?.installed === true,
+          undoRedo: globalThis.BRKTRKUndoRedo?.installed === true,
+          appShellInert: document.querySelector('#appShell')?.inert ?? null,
+        }))()`);
+        await waitFor(
+          () => run(authoritativeReady),
+          () => `production M4.2B2 authoritative bootstrap did not become ready: ${JSON.stringify(readinessSnapshot())}`,
+        );
+        assert(run('BRKTRKBootstrapInput?.isBlocked?.() === false'), "bootstrap input gate still blocks physical controls");
+        assert(run('matchMedia("(max-width: 760px)").matches'), "fixture did not start at phone breakpoint");
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "phrase", source: "m42b2-browser" })');
+        await wait(60);
+
+        const resetFixtureRows = () => run(`BRKTRKStores.project.phraseSteps.replaceRows(0, 0, Array.from({ length: 16 }, (_, row) => ({
+          note: 36 + row,
+          velocity: 64 + row,
+          instrument: row,
+          fx: [
+            { command: 4, value: row },
+            { command: 5, value: row + 16 },
+            { command: 231, value: row + 32 }
+          ]
+        })), { source: "m42b2-browser-setup" }); renderAll()`);
+        resetFixtureRows();
+        const original = run("Array.from({ length: 16 }, (_, row) => BRKTRKStores.project.phraseSteps.read(0, row))");
+
+        // Phone: explicit full-row selection must expose INS/DEL/DUP while retaining existing actions.
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 2, col: 0, focus: true, source: "m42b2-browser-position" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 2, col: 0, rowMode: true, source: "m42b2-browser" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.extend", row: 3, rowMode: true, source: "m42b2-browser" })');
+        await wait(70);
+        const actionBar = doc.querySelector("#m42bSelectionActions");
+        assert(actionBar && !actionBar.hidden, "phone Phrase selection action bar is hidden");
+        for (const id of ["m42bCopy", "m42bPaste", "m42bClear", "m42bInsertRows", "m42bDeleteRows", "m42bDuplicateRows", "m42bDone"]) {
+          const button = doc.querySelector(`#${id}`);
+          assert(button && !button.hidden, `phone Phrase action ${id} is unavailable`);
+          assert(button.getBoundingClientRect().height >= 44, `phone Phrase action ${id} lost 44px height`);
+          assert(parseFloat(app.getComputedStyle(button).fontSize) >= 8.5, `phone Phrase action ${id} lost accepted readable type size`);
+        }
+        for (const [id, expected] of [["m42bInsertRows", "Insert Phrase"], ["m42bDeleteRows", "Delete Phrase"], ["m42bDuplicateRows", "Duplicate Phrase"]]) {
+          const button = doc.querySelector(`#${id}`);
+          assert(!button.disabled, `${id} is unexpectedly disabled`);
+          const label = button.getAttribute("aria-label") ?? "";
+          assert(label.startsWith(expected), `${id} lacks descriptive accessibility name`);
+        }
+
+        // Review regression: canonical contextual-sheet ownership must hide/disable
+        // row actions and the click route itself must fail closed even if invoked programmatically.
+        const duplicateButton = doc.querySelector("#m42bDuplicateRows");
+        const depthBeforeSheet = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        await run('BRKTRKStores.navigation.entryState.setActiveSheet("follow-scope", { source: "m42b2-browser-sheet" })');
+        await wait(70);
+        for (const id of ["m42bInsertRows", "m42bDeleteRows", "m42bDuplicateRows"]) {
+          const button = doc.querySelector(`#${id}`);
+          assert(button.hidden && button.disabled, `${id} stayed actionable under contextual sheet`);
+        }
+        duplicateButton.click();
+        await wait(50);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${depthBeforeSheet}`), "phone row action mutated Project under contextual sheet");
+        await run('BRKTRKStores.navigation.entryState.closeSheet("follow-scope", { source: "m42b2-browser-sheet-close" })');
+        await wait(70);
+        assert(!duplicateButton.hidden && !duplicateButton.disabled, "Phrase row actions did not return after sheet closed");
+
+        // Review regression: Sound deliberately retains structural Phrase focus/selection;
+        // activeWorkspace, not focus alone, must block hidden Phrase row operations.
+        const depthBeforeSound = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "sound", source: "m42b2-browser-sound" })');
+        await wait(80);
+        assert(run('state.p3.activeWorkspace === "sound" && state.focus.pane === "phrase"'), "Sound fixture did not retain Phrase structural focus as expected");
+        for (const id of ["m42bInsertRows", "m42bDeleteRows", "m42bDuplicateRows"]) {
+          const button = doc.querySelector(`#${id}`);
+          assert(button.hidden && button.disabled, `${id} remained actionable in Sound workspace`);
+        }
+        duplicateButton.click();
+        await wait(50);
+        const hiddenDirect = await run('BRKTRKPhraseRowOperations.dispatch({ type: "phrase.rows.duplicate", source: "m42b2-browser-sound-direct" })');
+        assert(hiddenDirect.ok === false && hiddenDirect.reason === "phrase-workspace-only", `Sound direct row op did not fail closed: ${JSON.stringify(hiddenDirect)}`);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${depthBeforeSound}`), "Sound workspace hidden row action mutated Project history");
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "phrase", source: "m42b2-browser-return-phrase" })');
+        await wait(80);
+        assert(!duplicateButton.hidden && !duplicateButton.disabled, "row actions did not return after Phrase workspace restored");
+
+        // Phone Duplicate: one Project mutation/Undo and full stored-row preservation.
+        const selectionBeforeDuplicate = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selectionBeforeDuplicate.active && selectionBeforeDuplicate.pane === "phrase" && selectionBeforeDuplicate.startRow === 2 && selectionBeforeDuplicate.endRow === 3, `phone Duplicate precondition lost Phrase selection: ${JSON.stringify(selectionBeforeDuplicate)}`);
+        const depthBeforeDuplicate = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        duplicateButton.click();
+        await wait(80);
+        const depthAfterDuplicate = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        const selectionAfterDuplicate = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(depthAfterDuplicate === depthBeforeDuplicate + 1, `phone Duplicate history delta must be one; before=${depthBeforeDuplicate} after=${depthAfterDuplicate}`);
+        assert(run("JSON.stringify(BRKTRKStores.project.phraseSteps.read(0, 4))") === JSON.stringify(original[2]), "phone Duplicate lost first complete row");
+        assert(run("JSON.stringify(BRKTRKStores.project.phraseSteps.read(0, 5))") === JSON.stringify(original[3]), "phone Duplicate lost second complete row");
+        assert(selectionAfterDuplicate.active && selectionAfterDuplicate.rowMode && selectionAfterDuplicate.startRow === 4 && selectionAfterDuplicate.endRow === 5, "Duplicate result is not selected as complete rows");
+        assert(run('state.focus.pane === "phrase" && state.focus.row === 4 && state.focus.col === 0 && state.instrument === 2'), "Duplicate result did not finish on first result row/Instrument");
+        run("BRKTRKUndoRedo.undo()"); await wait(80);
+        assert(run("JSON.stringify(Array.from({ length: 16 }, (_, row) => BRKTRKStores.project.phraseSteps.read(0, row)))") === JSON.stringify(original), "Undo Duplicate did not restore Phrase exactly");
+        assert(run("state.instrument === 4"), "Undo Duplicate did not reconcile Instrument against restored focused row");
+
+        // Phone Delete shifts the tail up, fills 0E/0F, and must reconcile current
+        // Instrument to the new row now visible under the unchanged NOTE cursor.
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 2, col: 0, focus: true, source: "m42b2-delete-position" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 2, col: 0, rowMode: true, source: "m42b2-delete" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.extend", row: 3, rowMode: true, source: "m42b2-delete" })');
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 2, col: 0, focus: true, source: "m42b2-delete-first-row-context" })');
+        assert(run("state.instrument === 2"), "Delete fixture did not establish first-row Instrument context");
+        const depthBeforeDelete = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        doc.querySelector("#m42bDeleteRows").click(); await wait(80);
+        const depthAfterDelete = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        assert(depthAfterDelete === depthBeforeDelete + 1, `phone Delete history delta must be one; before=${depthBeforeDelete} after=${depthAfterDelete}`);
+        assert(run("JSON.stringify(BRKTRKStores.project.phraseSteps.read(0, 2))") === JSON.stringify(original[4]), "Delete did not shift row 04 to row 02 intact");
+        assert(run("BRKTRKStores.project.phraseSteps.read(0, 14).note === -1 && BRKTRKStores.project.phraseSteps.read(0, 15).note === -1"), "Delete did not empty-fill rows 0E/0F");
+        assert(run("state.instrument === 4"), "Delete did not reconcile Instrument context to shifted visible row");
+        assert(run("(BRKTRKStores.navigation.entryState?.getActiveSheet?.() ?? state.p3?.activeSheet ?? null) == null"), "Delete result reconciliation unexpectedly opened Note sheet");
+        run("BRKTRKUndoRedo.undo()"); await wait(80);
+        assert(run("state.instrument === 2"), "Undo Delete did not reconcile Instrument context to restored row");
+        run("BRKTRKUndoRedo.redo()"); await wait(80);
+        assert(run("state.instrument === 4"), "Redo Delete did not reconcile Instrument context to shifted row");
+        run("BRKTRKUndoRedo.undo()"); await wait(80);
+        assert(run("state.instrument === 2"), "second Undo Delete did not restore Instrument context");
+        resetFixtureRows();
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 6, col: 0, focus: true, source: "m42b2-reset-context" })');
+
+        // Single-row phone Insert from already-focused NOTE must use safe canonical
+        // result reconciliation: one Undo, no Note sheet.
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "m42b2-note-sheet" })');
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 6, col: 0, focus: true, source: "m42b2-note-sheet-position" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 6, col: 0, rowMode: true, source: "m42b2-note-sheet" })');
+        assert(run("(BRKTRKStores.navigation.entryState?.getActiveSheet?.() ?? state.p3?.activeSheet ?? null) == null"), "Note sheet was already active before row operation");
+        const depthBeforePhoneInsert = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        doc.querySelector("#m42bInsertRows").click(); await wait(90);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${depthBeforePhoneInsert + 1}`), "single-row phone Insert did not create one history entry");
+        assert(run("(BRKTRKStores.navigation.entryState?.getActiveSheet?.() ?? state.p3?.activeSheet ?? null) == null"), "single-row phone Insert unexpectedly opened Note sheet");
+        run("BRKTRKUndoRedo.undo()"); await wait(80);
+        resetFixtureRows();
+
+        // Desktop: a partial-column rectangle supplies row span, but Insert acts on complete rows.
+        frame.width = "1000";
+        app.dispatchEvent(new app.Event("resize"));
+        await wait(180);
+        assert(!run('matchMedia("(max-width: 760px)").matches'), "desktop breakpoint did not activate");
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "m42b2-browser" })');
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 2, col: 4, focus: true, source: "m42b2-browser" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 2, col: 4, source: "m42b2-browser" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.extend", row: 3, col: 5, source: "m42b2-browser" })');
+        const depthBeforeInsert = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        doc.dispatchEvent(new app.KeyboardEvent("keydown", { code: "Enter", key: "Enter", ctrlKey: true, bubbles: true, cancelable: true }));
+        await wait(90);
+        const depthAfterInsert = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        assert(depthAfterInsert === depthBeforeInsert + 1, `desktop Ctrl+Enter Insert history delta must be one; before=${depthBeforeInsert} after=${depthAfterInsert}`);
+        assert(run("BRKTRKStores.project.phraseSteps.read(0, 2).note === -1 && BRKTRKStores.project.phraseSteps.read(0, 3).note === -1"), "Insert did not create two canonical empty rows");
+        assert(run("JSON.stringify(BRKTRKStores.project.phraseSteps.read(0, 4))") === JSON.stringify(original[2]), "Insert did not shift the complete original row including FX");
+        let selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.rowMode && selection.startRow === 2 && selection.endRow === 3, "Insert result did not normalize to full-row selection");
+        assert(run('state.focus.pane === "phrase" && state.focus.row === 2 && state.focus.col === 0'), "Insert result cursor did not finish on first result row");
+
+        // Review regression: Shift+Down after a multi-row result must extend from
+        // the rectangle's stored far focus edge (03 -> 04), not from result cursor 02.
+        doc.dispatchEvent(new app.KeyboardEvent("keydown", { code: "ArrowDown", key: "ArrowDown", shiftKey: true, bubbles: true, cancelable: true }));
+        await wait(80);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.rowMode && selection.startRow === 2 && selection.endRow === 4, `Shift+Down did not extend from stored focus edge: ${JSON.stringify(selection)}`);
+
+        run("BRKTRKUndoRedo.undo()"); await wait(80);
+        resetFixtureRows();
+
+        // Desktop Sound workspace retains Phrase structural focus but row keyboard shortcuts must not mutate hidden Phrase rows.
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 2, rowMode: true, source: "m42b2-desktop-sound" })');
+        const depthBeforeDesktopSound = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "sound", source: "m42b2-desktop-sound" })');
+        doc.dispatchEvent(new app.KeyboardEvent("keydown", { code: "KeyD", key: "d", ctrlKey: true, bubbles: true, cancelable: true }));
+        await wait(80);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${depthBeforeDesktopSound}`), "desktop Sound workspace shortcut mutated hidden Phrase rows");
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "phrase", source: "m42b2-desktop-return" })');
+        await wait(70);
+
+        // Row 0F duplicate must fail closed without adding history.
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "m42b2-browser" })');
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 15, col: 0, focus: true, source: "m42b2-browser" })');
+        const depthBeforeNoRoom = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        const noRoom = await run('BRKTRKPhraseRowOperations.dispatch({ type: "phrase.rows.duplicate", source: "m42b2-browser" })');
+        assert(noRoom.reason === "no-room", "row 0F Duplicate did not fail closed");
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${depthBeforeNoRoom}`), "no-room Duplicate created Project history");
+
+        // Unchanged fixed-row transforms are explicit no-ops, not successful/undoable operations.
+        run('BRKTRKStores.project.phraseSteps.replaceRows(0, 15, [{ note: -1, velocity: 100, instrument: -1, fx: [{ command: 0, value: 0 }, { command: 0, value: 0 }, { command: 0, value: 0 }] }], { source: "m42b2-no-change-setup" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "m42b2-no-change" })');
+        await run('BRKTRKCommands.dispatch({ type: "cursor.select", pane: "phrase", row: 15, col: 0, focus: true, source: "m42b2-no-change" })');
+        const depthBeforeNoChange = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        const noChange = await run('BRKTRKPhraseRowOperations.dispatch({ type: "phrase.rows.insert", source: "m42b2-no-change" })');
+        assert(noChange.ok === false && noChange.reason === "no-change" && noChange.mutated === false, `unchanged Insert reported success: ${JSON.stringify(noChange)}`);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${depthBeforeNoChange}`), "unchanged Insert created Project history");
+        assert((doc.querySelector("#statusLine")?.textContent ?? "").includes("NO ROW CHANGE"), "unchanged Insert did not expose no-change status");
+
+        // Selection may already exist on desktop when responsive mode changes to phone.
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "phrase", source: "m42b2-resize-phrase" })');
+        await run('BRKTRKStores.navigation.entryState.closeSheet(null, { source: "m42b2-resize-sheet-clear" })');
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.begin", pane: "phrase", row: 6, rowMode: true, source: "m42b2-resize" })');
+        assert(actionBar.hidden, "desktop should keep phone selection action bar hidden");
+        frame.width = "390";
+        app.dispatchEvent(new app.Event("resize"));
+        await wait(180);
+        assert(run('matchMedia("(max-width: 760px)").matches'), "phone breakpoint did not reactivate");
+        assert(!actionBar.hidden, "active desktop Phrase selection did not reveal action bar after phone resize");
+        for (const id of ["m42bInsertRows", "m42bDeleteRows", "m42bDuplicateRows"]) {
+          const button = doc.querySelector(`#${id}`);
+          assert(!button.hidden && !button.disabled, `${id} stayed unavailable after desktop-to-phone resize`);
+        }
+
+        const diagnostic = run("BRKTRKPhraseRowOperations.snapshot()");
+        assert(diagnostic?.workspaceRequired === "phrase", "row operation diagnostics missing workspace ownership");
+        assert(diagnostic?.semantics?.insert === "blank-at-start-shift-down-truncate-0F", "row operation diagnostics missing Insert contract");
+        assert(diagnostic?.semantics?.delete === "remove-shift-up-empty-fill-0F", "row operation diagnostics missing Delete contract");
+        assert(diagnostic?.lastOperation?.mutated === false, "no-change operation was not retained honestly in diagnostics");
+        assert(!Object.hasOwn(diagnostic, "rows"), "row operation diagnostics leaked Phrase payload");
+
+        result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+      } catch (error) {
+        console.error(error);
+        result.textContent = `FAILED: ${error.message}`;
+      }
+    }, 50), { once: true });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1036 @@
+/* BRKTRK Web honest production surface. */
+
+[data-dock="mod"],
+[data-dock="fx"],
+#placeholderDock {
+  display: none !important;
+}
+
+/* Phrase command/value layout is owned by phrase-fx-surface.css from M4.1B onward. */
+
+/* Production Sound is a musical Instrument surface, not a SaaS form or a
+   legacy inspector-card grid. Keep package identity secondary, make the
+   active page's controls visible together, and reserve magenta/cyan/green/
+   amber for focus, structure, signal and routing/status respectively. */
+#soundDock {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+#instrumentInspector.instrument-inspector {
+  min-width: 0;
+  min-height: 0;
+  display: block;
+  overflow: visible;
+  container-type: inline-size;
+}
+
+#instrumentInspector > .a4a-sound-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+#instrumentInspector .a4a-sound-toolbar {
+  min-width: 0;
+  padding: 4px 0;
+  display: grid;
+  grid-template-columns: auto minmax(180px, 280px) minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#instrumentInspector .a4a-sound-toolbar label {
+  min-width: 0;
+  gap: 5px;
+  color: var(--muted);
+  font: 850 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+}
+
+#instrumentInspector .a4a-sound-toolbar select,
+#instrumentInspector .a4a-sound-toolbar input[type="text"] {
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #08111a;
+  color: var(--ink);
+  font: 760 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4a-sound-toolbar select:focus-visible,
+#instrumentInspector .a4a-sound-toolbar input[type="text"]:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: -2px;
+}
+
+#instrumentInspector .a4a-engine-id {
+  min-width: 0;
+  justify-self: end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cyan);
+  opacity: .48;
+  font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4b-preset-panel {
+  min-width: 0;
+  padding: 5px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, auto);
+  grid-template-areas:
+    "row heading"
+    "save heading"
+    "manage heading";
+  gap: 8px 12px;
+  align-items: center;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+}
+
+#instrumentInspector .a4b-preset-heading {
+  grid-area: heading;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+
+#instrumentInspector .a4b-preset-heading strong {
+  color: var(--amber);
+  font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .12em;
+}
+
+#instrumentInspector .a4b-preset-state {
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  opacity: .78;
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4b-preset-row {
+  grid-area: row;
+  min-width: 0;
+  gap: 6px;
+}
+
+/* SAVE sits beside the preset it saves. It takes only the width of its own
+   word so the selector, which carries the name a musician reads, keeps the
+   rest of the row. */
+#instrumentInspector .a4b-preset-row button[data-preset-library-action="save"] {
+  flex: 0 0 auto;
+  min-height: 29px;
+  padding-inline: 12px;
+  border: 1px solid rgba(255,184,47,.44);
+  border-radius: 4px;
+  background: rgba(255,184,47,.07);
+  color: var(--amber);
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+}
+
+/* The selector is where a musician looks to see which sound is loaded, so it
+   is where it has to say the sound is no longer that preset. The option text
+   carries an asterisk for the same reason: a collapsed select shows text, and
+   colour alone is not a channel every platform renders here. */
+#instrumentInspector .a4b-preset-row select[data-preset-modified="true"] {
+  color: var(--amber);
+  border-color: rgba(255,184,47,.5);
+}
+
+#instrumentInspector .a4b-preset-blocked {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--amber);
+  opacity: .72;
+  font: 700 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+}
+
+#instrumentInspector .a4b-preset-blocked[hidden] {
+  display: none;
+}
+
+#instrumentInspector .a4b-preset-row select {
+  min-width: 0;
+  min-height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #08111a;
+  color: var(--ink);
+  font: 760 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4b-preset-row button {
+  min-height: 29px;
+  padding-inline: 12px;
+  border: 1px solid rgba(255,184,47,.44);
+  border-radius: 4px;
+  background: rgba(255,184,47,.07);
+  color: var(--amber);
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+}
+
+#instrumentInspector .a4b-preset-row button:disabled {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--dim);
+}
+
+/* One titled section per engine parameter group. The section is a plain
+   container so an engine that declares no groups renders exactly the single
+   flat grid it did before. */
+#instrumentInspector .a4a-param-group {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+#instrumentInspector .a4a-param-group + .a4a-param-group {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+#instrumentInspector .a4a-param-group-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--a4a-accent, var(--amber));
+  font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .16em;
+}
+
+/* The section name earns its own line by carrying a rule across the rest of
+   it, so a large engine reads as sections rather than as a wall of controls. */
+#instrumentInspector .a4a-param-group-title::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+/* A declared section fades its rule out in its own colour, so the eye follows
+   the signal path down the panel. */
+#instrumentInspector .a4a-param-group[data-section-accent] .a4a-param-group-title::after {
+  background: linear-gradient(90deg, var(--a4a-accent), transparent);
+  opacity: .34;
+}
+
+#instrumentInspector .a4b-preset-save-row {
+  grid-area: save;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* An explicit display beats the hidden attribute, so the closed form has to
+   say so itself - the same rule the management row already needs. */
+#instrumentInspector .a4b-preset-save-row[hidden] {
+  display: none;
+}
+
+#instrumentInspector .a4b-preset-save-row select {
+  min-width: 0;
+  min-height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #08111a;
+  color: var(--ink);
+  padding-inline: 6px;
+  font: 760 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4b-preset-save-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #08111a;
+  color: var(--ink);
+  padding-inline: 8px;
+  font: 760 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4b-preset-save-row button {
+  flex: 0 0 auto;
+  min-height: 29px;
+  padding-inline: 12px;
+  border: 1px solid rgba(255,184,47,.44);
+  border-radius: 4px;
+  background: rgba(255,184,47,.07);
+  color: var(--amber);
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+}
+
+#instrumentInspector .a4b-preset-manage-row {
+  grid-area: manage;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+#instrumentInspector .a4b-preset-manage-row[hidden] {
+  display: none;
+}
+
+#instrumentInspector .a4b-preset-manage-row input {
+  min-width: 0;
+  min-height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #08111a;
+  color: var(--ink);
+  padding-inline: 8px;
+  font: 760 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4b-preset-manage-row button {
+  min-height: 29px;
+  padding-inline: 10px;
+  border: 1px solid rgba(255,184,47,.34);
+  border-radius: 4px;
+  background: rgba(255,184,47,.045);
+  color: var(--muted);
+  font: 850 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .045em;
+}
+
+#instrumentInspector .a4b-preset-manage-row button[data-preset-library-action="delete"] {
+  border-color: rgba(255,93,93,.3);
+}
+
+#instrumentInspector .a4b-preset-manage-row button:disabled {
+  opacity: .42;
+}
+
+#instrumentInspector .a4a-page-tabs {
+  min-width: 0;
+  min-height: 27px;
+  padding: 0;
+  gap: 2px;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+#instrumentInspector .a4a-page-tabs button {
+  min-height: 27px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .07em;
+}
+
+#instrumentInspector .a4a-page-tabs button[aria-pressed="true"] {
+  border-bottom-color: var(--pink);
+  background: rgba(255,63,146,.055);
+  color: var(--pink);
+}
+
+#instrumentInspector .a4a-parameter-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(154px, 1fr));
+  gap: 2px 14px;
+  align-items: start;
+}
+
+/* A parameter is a row, not a card. The box, its border and its own padding
+   were spending most of each control's area on the container rather than on
+   the control, so a phone fitted five of them. Rhythm and a hairline separate
+   the rows instead, and the track becomes the row's own baseline. */
+#instrumentInspector .a4a-param {
+  min-width: 0;
+  padding: 9px 2px 8px;
+  display: grid;
+  gap: 6px;
+  border: 0;
+  /* No radius: a rounded focus tint reads as a card again. The selected row is
+     a full-bleed band, which is what a row-per-parameter surface should show. */
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--line-soft);
+  transition: background 80ms linear, box-shadow 80ms linear;
+}
+
+#instrumentInspector .a4a-param.p301-keyboard-focus,
+#instrumentInspector .a4a-param:focus-within {
+  background: rgba(255, 63, 146, .07);
+  box-shadow: inset 2px 0 0 var(--pink), inset 0 -1px 0 var(--line-soft);
+}
+
+/* Magenta stays the meaning of focus, so a magenta section marks its focused
+   row with its own edge rather than saying the same thing twice. */
+#instrumentInspector .a4a-param-group[data-section-accent="1"] .a4a-param.p301-keyboard-focus,
+#instrumentInspector .a4a-param-group[data-section-accent="1"] .a4a-param:focus-within {
+  box-shadow: inset 2px 0 0 var(--ink), inset 0 -1px 0 var(--line-soft);
+}
+
+#instrumentInspector .a4a-param header {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+/* The label recedes and the value leads: the number is what you read while you
+   drag, and at the same size as its own caption neither one does. */
+#instrumentInspector .a4a-param header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font: 800 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+#instrumentInspector .a4a-param output {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font: 800 15px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The native range stays the control - every gesture, durability and
+   accessibility path in the app is bound to it - but it is drawn as the row's
+   own track. The whole width is the target, and the fill is painted from the
+   custom properties the renderer writes, so there is no second source of truth
+   about where the value is. */
+#instrumentInspector .a4a-param input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+/* A groove rather than a line. The fill sits IN something, which is most of
+   what separates a synth control from a form input, and the notch marks the
+   value the engine itself shipped — the second value a synth's knob ring
+   usually carries, and the only one BRKTRK actually has. Both layers are the
+   track's own background, so the whole control is still one native input. */
+#instrumentInspector .a4a-param input[type="range"]::-webkit-slider-runnable-track {
+  height: 7px;
+  border-radius: 4px;
+  background-color: #0a121b;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .75), inset 0 -1px 0 rgba(255, 255, 255, .035);
+  background-image:
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-default, 50%),
+      rgba(141, 160, 178, .5) var(--a4a-default, 50%) calc(var(--a4a-default, 50%) + 1px),
+      transparent calc(var(--a4a-default, 50%) + 1px) 100%),
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-fill-from, 0%),
+      var(--a4a-accent, var(--pink)) var(--a4a-fill-from, 0%) var(--a4a-fill-to, 0%),
+      transparent var(--a4a-fill-to, 0%) 100%);
+}
+
+#instrumentInspector .a4a-param input[type="range"]::-moz-range-track {
+  height: 7px;
+  border-radius: 4px;
+  background-color: #0a121b;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .75), inset 0 -1px 0 rgba(255, 255, 255, .035);
+  background-image:
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-default, 50%),
+      rgba(141, 160, 178, .5) var(--a4a-default, 50%) calc(var(--a4a-default, 50%) + 1px),
+      transparent calc(var(--a4a-default, 50%) + 1px) 100%),
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-fill-from, 0%),
+      var(--a4a-accent, var(--pink)) var(--a4a-fill-from, 0%) var(--a4a-fill-to, 0%),
+      transparent var(--a4a-fill-to, 0%) 100%);
+}
+
+/* A parameter whose range crosses zero fills from its own zero outward, so a
+   negative value looks negative instead of looking like a partly full bar. The
+   tick marks where zero actually sits, which is only the middle when the
+   engine's range happens to be symmetric. */
+/* Each engine only parses its own pseudo-element, and one unknown selector in a
+   list invalidates the whole rule - which silently dropped this tick in both
+   engines when the two were declared together. */
+#instrumentInspector .a4a-param[data-bipolar] input[type="range"]::-webkit-slider-runnable-track {
+  background-image:
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-fill-zero, 50%),
+      rgba(226, 238, 248, .62) var(--a4a-fill-zero, 50%) calc(var(--a4a-fill-zero, 50%) + 1px),
+      transparent calc(var(--a4a-fill-zero, 50%) + 1px) 100%),
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-default, 50%),
+      rgba(141, 160, 178, .5) var(--a4a-default, 50%) calc(var(--a4a-default, 50%) + 1px),
+      transparent calc(var(--a4a-default, 50%) + 1px) 100%),
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-fill-from, 0%),
+      var(--a4a-accent, var(--pink)) var(--a4a-fill-from, 0%) var(--a4a-fill-to, 0%),
+      transparent var(--a4a-fill-to, 0%) 100%);
+}
+
+#instrumentInspector .a4a-param[data-bipolar] input[type="range"]::-moz-range-track {
+  background-image:
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-fill-zero, 50%),
+      rgba(226, 238, 248, .62) var(--a4a-fill-zero, 50%) calc(var(--a4a-fill-zero, 50%) + 1px),
+      transparent calc(var(--a4a-fill-zero, 50%) + 1px) 100%),
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-default, 50%),
+      rgba(141, 160, 178, .5) var(--a4a-default, 50%) calc(var(--a4a-default, 50%) + 1px),
+      transparent calc(var(--a4a-default, 50%) + 1px) 100%),
+    linear-gradient(90deg,
+      transparent 0 var(--a4a-fill-from, 0%),
+      var(--a4a-accent, var(--pink)) var(--a4a-fill-from, 0%) var(--a4a-fill-to, 0%),
+      transparent var(--a4a-fill-to, 0%) 100%);
+}
+
+#instrumentInspector .a4a-param input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 2px;
+  height: 13px;
+  margin-top: -3px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+/* The cap lights up while the control is held, so the row you are dragging is
+   unmistakable on a phone where a finger covers the value. */
+#instrumentInspector .a4a-param input[type="range"]:active::-webkit-slider-thumb {
+  box-shadow: 0 0 7px var(--a4a-accent, var(--pink));
+}
+
+#instrumentInspector .a4a-param input[type="range"]::-moz-range-thumb {
+  width: 2px;
+  height: 13px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+#instrumentInspector .a4a-param input[type="range"]:focus-visible {
+  outline: none;
+}
+
+/* Forced colors drops the row's tint, its inset edge and the painted track, so
+   the only focus cue this surface has would disappear along with the value the
+   fill states. Both come back here in system colours. */
+@media (forced-colors: active) {
+  #instrumentInspector .a4a-param input[type="range"]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  #instrumentInspector .a4a-param.p301-keyboard-focus,
+  #instrumentInspector .a4a-param:focus-within {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+
+  #instrumentInspector .a4a-param input[type="range"]::-webkit-slider-runnable-track {
+    forced-color-adjust: none;
+  }
+
+  #instrumentInspector .a4a-param input[type="range"]::-moz-range-track {
+    forced-color-adjust: none;
+  }
+}
+
+/* A list of options is cyan and carries a chevron and no track, so you can tell
+   at a glance that dragging it will do nothing. It stays a native select so a
+   thirty-entry shape list opens the platform picker. */
+#instrumentInspector .a4a-param[data-control="enum"] {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 10px;
+}
+
+#instrumentInspector .a4a-param[data-control="enum"] header {
+  display: contents;
+}
+
+#instrumentInspector .a4a-param[data-control="enum"] output {
+  display: none;
+}
+
+#instrumentInspector .a4a-param[data-control="enum"] small {
+  grid-column: 1 / -1;
+}
+
+#instrumentInspector .a4a-param[data-control="enum"] {
+  color: var(--a4a-accent, var(--cyan));
+}
+
+#instrumentInspector .a4a-param select {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 26px;
+  padding: 0 15px 0 0;
+  border: 0;
+  border-radius: 3px;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23506477' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: 9px 9px;
+  color: var(--a4a-accent, var(--cyan));
+  font: 800 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: right;
+  text-align-last: right;
+  cursor: pointer;
+}
+
+#instrumentInspector .a4a-param select option {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+#instrumentInspector .a4a-param small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  opacity: .72;
+  font: 650 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4a-param[data-filter-bypassed] input[type="range"] {
+  opacity: .55;
+}
+
+#instrumentInspector .a4a-param .a4a-filter-bypass-hint {
+  color: var(--amber);
+  opacity: 1;
+  font-size: 8px;
+  white-space: normal;
+}
+
+#instrumentInspector .a4a-create-panel {
+  border-color: rgba(50,215,238,.28);
+  background: rgba(50,215,238,.025);
+}
+
+/* Before an Instrument exists this panel is the whole Sound workspace - the
+   first thing a new musician sees there. It used the browser's own select and
+   button: a light-grey block in a dark instrument, 32px tall, under the 44px
+   phone target UX_CONTRACT sets for every interactive Sound control. It now
+   speaks the preset row's language; CREATE builds structure, so it is cyan. */
+#instrumentInspector .a4a-create-panel > strong {
+  color: var(--ink);
+  font: 850 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .12em;
+}
+
+#instrumentInspector .a4a-create-panel select {
+  min-width: 0;
+  min-height: 29px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #08111a;
+  color: var(--ink);
+  font: 760 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4a-create-panel button {
+  min-height: 29px;
+  padding-inline: 14px;
+  border: 1px solid rgba(50,215,238,.5);
+  border-radius: 4px;
+  background: rgba(50,215,238,.08);
+  color: var(--cyan);
+  font: 900 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+
+#instrumentInspector .a4a-create-panel button:disabled {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--dim);
+  cursor: default;
+}
+
+#instrumentInspector .a4a-create-panel select:focus-visible,
+#instrumentInspector .a4a-create-panel button:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: -2px;
+}
+
+#instrumentInspector .a4a-create-panel .a4a-sound-state {
+  color: var(--muted);
+  opacity: 1;
+  font: 650 9px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#instrumentInspector .a4a-create-panel .a4a-sound-state.a4a-error {
+  color: var(--danger);
+}
+
+@media (max-width: 760px) {
+  #instrumentInspector .a4a-create-panel select,
+  #instrumentInspector .a4a-create-panel button {
+    box-sizing: border-box;
+    min-height: 44px;
+    min-block-size: 44px;
+  }
+}
+
+/* Between phone and wide desktop, both panels stay below the tracker but never
+   takes more than a compact workbench. Its controls scroll independently. */
+@media (min-width: 761px) {
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) {
+    grid-template-rows: var(--topbar-h) minmax(0, 1fr) clamp(210px, 28dvh, 280px) var(--command-h);
+  }
+
+  #soundDock {
+    padding: 6px 8px;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #soundDock .sound-heading {
+    padding-right: 7px;
+  }
+
+  #soundDock .sound-heading h2 {
+    font-size: 14px;
+  }
+}
+
+/* A wide Sound editor lives alongside Song and Phrase. The tracker keeps the
+   whole usable height; only the Sound controls scroll. Instrument and Mixer share this same
+   position, so changing panels cannot move or shorten the tracker. */
+@media (min-width: 1180px) {
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) {
+    grid-template-columns: minmax(0, 1fr) clamp(350px, 30vw, 420px);
+    grid-template-rows: var(--topbar-h) minmax(0, 1fr) var(--command-h);
+  }
+
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) > .topbar,
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) > .command-bar {
+    grid-column: 1 / -1;
+  }
+
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) > .workspace {
+    grid-column: 1;
+    grid-row: 2;
+    /* The second tracker pane absorbs the gap instead of overflowing the
+       available column when Song reaches its 330px minimum. */
+    grid-template-columns: minmax(330px, 38%) minmax(0, 1fr);
+  }
+
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) > #inspectorPane {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 6px 6px 4px 0;
+  }
+
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) #soundDock {
+    display: block;
+    padding: 8px 10px 12px;
+  }
+
+  #soundDock .sound-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 0 8px;
+    margin-bottom: 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  #soundDock .sound-heading h2 {
+    margin: 0;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar .a4a-engine-id {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  #instrumentInspector .a4b-preset-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "heading" "row" "save" "manage";
+    gap: 5px;
+  }
+
+  #instrumentInspector .a4b-preset-heading {
+    justify-items: start;
+  }
+
+  #instrumentInspector .a4b-preset-row {
+    flex-wrap: wrap;
+  }
+
+  #instrumentInspector .a4b-preset-row select {
+    flex: 1 1 150px;
+    min-width: 0;
+  }
+
+  #instrumentInspector .a4b-preset-blocked {
+    flex: 1 0 100%;
+    text-align: left;
+  }
+
+  #instrumentInspector .a4b-preset-save-row,
+  #instrumentInspector .a4b-preset-manage-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #instrumentInspector .a4b-preset-save-row input,
+  #instrumentInspector .a4b-preset-manage-row input {
+    grid-column: 1 / -1;
+  }
+}
+
+/* At 1280px the full Song grid needs its normal 365px minimum. Keep Phrase
+   flexible so the new side inspector never clips the last note/FX column. */
+@media (min-width: 1280px) {
+  .app-shell:has(#inspectorPane:is([data-dock="sound"], [data-dock="mix"])) > .workspace {
+    grid-template-columns: minmax(365px, 35%) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  #instrumentInspector .a4b-preset-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "heading"
+      "row"
+      "save"
+      "manage";
+  }
+
+  #instrumentInspector .a4b-preset-heading {
+    justify-items: start;
+  }
+
+  /* A blocked-gate code is a status, not a control. It was flex:none with a
+     long code such as STRUCTURAL-RECONCILIATION-PENDING, which starved the
+     preset selector to 0px at 360 and 17px at 412 - the selector collapsed
+     exactly when a musician needed it to act on the gate. The code now takes
+     its own line and the selector keeps a real floor. */
+  #instrumentInspector .a4b-preset-row {
+    flex-wrap: wrap;
+  }
+
+  #instrumentInspector .a4b-preset-row select {
+    flex: 1 1 auto;
+    min-width: 8rem;
+  }
+
+  #instrumentInspector .a4b-preset-blocked {
+    flex: 1 0 100%;
+    text-align: left;
+  }
+
+  #instrumentInspector .a4b-preset-save-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #instrumentInspector .a4b-preset-save-row input {
+    grid-column: 1 / -1;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    padding-top: 0;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar label {
+    width: auto;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar .a4a-engine-id {
+    grid-column: 1 / -1;
+    justify-self: start;
+    max-width: 100%;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar select,
+  #instrumentInspector .a4a-sound-toolbar input[type="text"],
+  #instrumentInspector .a4b-preset-row select,
+  #instrumentInspector .a4b-preset-row button,
+  #instrumentInspector .a4b-preset-save-row input,
+  #instrumentInspector .a4b-preset-save-row select,
+  #instrumentInspector .a4b-preset-save-row button,
+  #instrumentInspector .a4b-preset-manage-row input,
+  #instrumentInspector .a4b-preset-manage-row button,
+  #instrumentInspector .a4a-page-tabs button,
+  #instrumentInspector .a4a-param select,
+  #instrumentInspector .a4a-param input[type="range"] {
+    box-sizing: border-box;
+    min-height: 44px;
+    min-block-size: 44px;
+  }
+
+  /* Chromium's native range control can keep its intrinsic rendered height
+     below min-height even when the CSS minimum computes to 44px. Give the
+     continuous control a physical block size so its actual hit box satisfies
+     the same phone target contract as selects and buttons. */
+  #instrumentInspector .a4a-param input[type="range"] {
+    height: 44px;
+    block-size: 44px;
+  }
+
+  #instrumentInspector .a4b-preset-state {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  #instrumentInspector .a4a-page-tabs {
+    min-height: 44px;
+  }
+
+  #instrumentInspector .a4a-parameter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 2px 12px;
+  }
+
+  #instrumentInspector .a4a-param {
+    padding: 8px 2px 6px;
+    gap: 2px;
+  }
+
+  /* The 44px control keeps its phone touch target, but its box now overlaps the
+     label line's leading instead of stacking below it, so the row reads at
+     about two thirds of the height the bordered card needed. */
+  #instrumentInspector .a4a-param input[type="range"] {
+    margin-top: -10px;
+    margin-bottom: -8px;
+  }
+
+  #instrumentInspector .a4a-param[data-control="enum"] {
+    gap: 2px 10px;
+  }
+}
+
+/* Portrait phone gets one full-width column: a row that spans the screen can
+   lead with its value, and the drag has the whole width to resolve into. */
+@media (max-width: 430px) {
+  #instrumentInspector .a4a-parameter-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  #instrumentInspector .a4a-param {
+    padding: 9px 4px 7px;
+  }
+
+  #instrumentInspector .a4a-param output {
+    font-size: 17px;
+  }
+
+  #instrumentInspector .a4a-param header strong {
+    font-size: 9px;
+  }
+
+  #instrumentInspector .a4a-param select {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  #instrumentInspector .a4a-sound-toolbar,
+  #instrumentInspector .a4a-parameter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A desktop Sound dock has enough horizontal room for sections side by side.
+   Put the section headings beside one another, so a normal Instrument can be
+   edited without scrolling past every section above the target control. */
+@container (min-width: 540px) {
+  #instrumentInspector .a4a-sound-shell {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+    row-gap: 7px;
+    align-content: start;
+  }
+
+  #instrumentInspector .a4a-sound-toolbar,
+  #instrumentInspector .a4b-preset-panel,
+  #instrumentInspector .a4a-page-tabs,
+  #instrumentInspector .a4a-create-panel {
+    grid-column: 1 / -1;
+  }
+
+  #instrumentInspector .a4a-param-group + .a4a-param-group {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  #instrumentInspector .a4a-parameter-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  #instrumentInspector .a4a-param {
+    padding-block: 5px 4px;
+    gap: 3px;
+  }
+
+  #instrumentInspector .a4a-param header strong { font-size: 9px; letter-spacing: .06em; }
+  #instrumentInspector .a4a-param output { font-size: 15px; }
+  #instrumentInspector .a4a-param small { font-size: 8px; }
+
+  #instrumentInspector .a4a-param input[type="range"]::-webkit-slider-thumb {
+    width: 13px;
+    height: 13px;
+    margin-top: -3px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: #0a121b;
+    box-shadow: 0 0 0 2px #0a121b;
+  }
+
+  #instrumentInspector .a4a-param input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: #0a121b;
+  }
+}
+

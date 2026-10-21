@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>M4.2B full-app rectangular selection clipboard smoke</title></head>
+<body>
+  <strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+  <iframe id="app" src="./index.html" width="390" height="844" title="BRKTRK M4.2B test" style="position:absolute;left:0;top:30px;border:0"></iframe>
+  <script>
+    const result = document.querySelector("#result");
+    const frame = document.querySelector("#app");
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    async function waitFor(predicate, message, timeoutMs = 15000) {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (predicate()) return;
+        await wait(40);
+      }
+      throw new Error(message);
+    }
+
+    frame.addEventListener("load", () => setTimeout(async () => {
+      try {
+        const app = frame.contentWindow;
+        const doc = frame.contentDocument;
+        const run = (source) => app.eval(source);
+        const focus = (pane, row, col) => run(`BRKTRKCommands.dispatch({ type: "cursor.select", pane: "${pane}", row: ${row}, col: ${col}, focus: false, source: "m42b-full-fixture" })`);
+        const key = (code, options = {}) => doc.dispatchEvent(new app.KeyboardEvent("keydown", {
+          code, key: options.key ?? code, bubbles: true, cancelable: true, ...options,
+        }));
+
+        await waitFor(
+          () => run("Boolean(globalThis.BRKTRKSelectionClipboard?.installed && globalThis.BRKTRKUndoRedo?.installed && globalThis.BRKTRKStores?.project?.structure && globalThis.BRKTRKStores?.project?.phraseSteps)"),
+          "production M4.2B controller did not load",
+        );
+        assert(run('matchMedia("(max-width: 760px)").matches'), "fixture did not start at phone breakpoint");
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "phrase", source: "m42b-full-fixture" })');
+        await wait(50);
+        run(`BRKTRKStores.project.phraseSteps.replaceRows(0, 0, [
+          { note: 48, velocity: 91, instrument: 2, fx: [{ command: 4, value: 64 }, { command: 231, value: 196 }, { command: 0, value: 0 }] },
+          { note: 52, velocity: 103, instrument: 7, fx: [{ command: 5, value: 96 }, { command: 1, value: 3 }, { command: 4, value: 8 }] }
+        ], { source: "m42b-full-fixture" });
+        BRKTRKStores.project.phraseSteps.replaceRows(0, 4, [
+          { note: 60, velocity: 55, instrument: 9, fx: [{ command: 1, value: 11 }, { command: 2, value: 22 }, { command: 3, value: 33 }] },
+          { note: 61, velocity: 56, instrument: 8, fx: [{ command: 4, value: 44 }, { command: 5, value: 55 }, { command: 6, value: 66 }] }
+        ], { source: "m42b-full-fixture" }); renderAll()`);
+
+        const stableNoteCell = () => run(`(() => {
+          const cell = document.querySelector('[data-pane="phrase"][data-row="0"][data-col="0"]');
+          if (!cell) return false;
+          const rect = cell.getBoundingClientRect();
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          return rect.width > 0 && rect.height > 0 && hit?.closest?.('[data-pane="phrase"][data-row][data-col]') === cell;
+        })()`);
+        await waitFor(stableNoteCell, "Phrase row 00 never became hit-testable");
+        await wait(100);
+
+        result.textContent = "BRKTRK_BROWSER_TESTS_STAGE: TRUSTED_LONG_PRESS_READY";
+        await waitFor(() => run("BRKTRKSelectionClipboard.getSelection().active"), "trusted phone long-press did not enter selection mode");
+        await wait(220);
+        let selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.pane === "phrase" && selection.rowCount === 1 && selection.colCount === 1, "trusted Note long-press did not settle as 1x1");
+        assert(doc.querySelector("#m42bSelectionActions").hidden === false, "phone selection bar is hidden");
+        assert([...doc.querySelectorAll("#m42bSelectionActions button")].every((button) => button.getBoundingClientRect().height >= 44), "phone selection actions lost 44px height");
+
+        doc.querySelector('[data-pane="phrase"][data-row="1"][data-col="1"]').click();
+        await wait(45);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.startRow === 0 && selection.endRow === 1 && selection.startCol === 0 && selection.endCol === 1, "phone did not extend Note+Velocity rectangle");
+        const source0 = run("BRKTRKStores.project.phraseSteps.read(0, 0)");
+        const source1 = run("BRKTRKStores.project.phraseSteps.read(0, 1)");
+        const dest4 = run("BRKTRKStores.project.phraseSteps.read(0, 4)");
+        const dest5 = run("BRKTRKStores.project.phraseSteps.read(0, 5)");
+        doc.querySelector("#m42bCopy").click(); await wait(20);
+        assert(run("JSON.stringify(BRKTRKSelectionClipboard.getClipboardMetadata().fields)") === JSON.stringify(["note", "velocity"]), "phone clipboard lost Note+Velocity fields");
+        assert(run("BRKTRKSelectionClipboard.snapshot().pasteTarget.armed"), "phone Copy did not arm paste-target mode");
+
+        // M4.2B1P: actual production cell click chooses destination without DONE/Escape and without Project mutation.
+        doc.querySelector('[data-pane="phrase"][data-row="4"][data-col="0"]').click();
+        await wait(45);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.startRow === 4 && selection.endRow === 4 && selection.startCol === 0 && selection.endCol === 0, "phone post-Copy click did not collapse to paste target");
+        assert(run("BRKTRKStores.project.phraseSteps.read(0, 4).note") === dest4.note, "phone target click mutated Phrase before Paste");
+        const phraseDepth = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        doc.querySelector("#m42bPaste").click();
+        await wait(45);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${phraseDepth + 1}`), "Phrase rectangle paste is not one Undo step");
+        const pasted4 = run("BRKTRKStores.project.phraseSteps.read(0, 4)");
+        const pasted5 = run("BRKTRKStores.project.phraseSteps.read(0, 5)");
+        assert(pasted4.note === source0.note && pasted4.velocity === source0.velocity && pasted5.note === source1.note && pasted5.velocity === source1.velocity, "Phrase rectangle lost Note/Velocity data");
+        assert(pasted4.instrument === dest4.instrument && JSON.stringify(pasted4.fx) === JSON.stringify(dest4.fx), "Phrase rectangle overwrote Instrument/FX outside selection");
+        assert(pasted5.instrument === dest5.instrument && JSON.stringify(pasted5.fx) === JSON.stringify(dest5.fx), "Phrase rectangle overwrote second-row outside fields");
+        doc.querySelector('[data-pane="phrase"][data-row="8"][data-col="0"]').click();
+        await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.startRow === 8 && selection.endRow === 8 && run("BRKTRKSelectionClipboard.snapshot().pasteTarget.armed"), "phone repeated paste targeting did not remain armed");
+        run("BRKTRKUndoRedo.undo()"); await wait(35);
+        assert(run("BRKTRKStores.project.phraseSteps.read(0, 4).note") === dest4.note, "Undo did not restore Phrase rectangle paste");
+
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "m42b-fixture" })');
+        await focus("phrase", 0, 3);
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "clipboard.copy", source: "m42b-phone-fx-copy" })');
+        assert(run("JSON.stringify(BRKTRKSelectionClipboard.getClipboardMetadata().fields)") === JSON.stringify(["fx1.command", "fx1.value"]), "phone grouped FX did not include command+value");
+        await focus("phrase", 3, 5);
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "clipboard.paste", source: "m42b-phone-fx-paste" })');
+        assert(run("JSON.stringify(BRKTRKStores.project.phraseSteps.read(0, 3).fx[1])") === JSON.stringify(source0.fx[0]), "phone grouped FX1→FX2 paste failed");
+
+        frame.width = "900";
+        app.dispatchEvent(new app.Event("resize"));
+        await wait(160);
+        assert(!run('matchMedia("(max-width: 760px)").matches'), "desktop breakpoint did not activate");
+
+        await run('BRKTRKSelectionClipboard.dispatch({ type: "selection.cancel", source: "m42b-fixture" })');
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "song", source: "m42b-full-fixture" })');
+        await wait(50);
+        run(`BRKTRKStores.project.structure.replaceSongRectangle(0, 0, [[0, 1], [1, 0]], { source: "m42b-song-setup" }); renderAll()`);
+        await focus("song", 0, 0);
+        key("ArrowRight", { key: "ArrowRight", shiftKey: true }); await wait(35);
+        key("ArrowDown", { key: "ArrowDown", shiftKey: true }); await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.pane === "song" && selection.rowCount === 2 && selection.colCount === 2, "Song Shift+Arrow rectangle failed");
+        key("KeyC", { key: "c", ctrlKey: true }); await wait(30);
+        assert(run("BRKTRKSelectionClipboard.getClipboardMetadata().referenceSemantics") === "shared-reference", "Song clipboard lost shared-reference semantics");
+        const chainCount = run("Object.keys(BRKTRKStores.project.getState().chains).length");
+        doc.querySelector('[data-pane="song"][data-row="2"][data-col="2"]').click(); await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.startRow === 2 && selection.endRow === 2 && selection.startCol === 2 && selection.endCol === 2, "desktop Song post-Copy click did not retarget without Escape");
+        const songDepth = run("BRKTRKUndoRedo.snapshot().undoDepth");
+        key("KeyV", { key: "v", ctrlKey: true }); await wait(50);
+        assert(run(`BRKTRKUndoRedo.snapshot().undoDepth === ${songDepth + 1}`), "Song paste is not one Undo step");
+        assert(run("JSON.stringify([[model.song[2][2], model.song[2][3]], [model.song[3][2], model.song[3][3]]])") === JSON.stringify([[0, 1], [1, 0]]), "Song reference rectangle paste failed");
+        assert(run("Object.keys(BRKTRKStores.project.getState().chains).length") === chainCount, "Song copy silently cloned Chains");
+
+        key("Escape", { key: "Escape" }); await wait(20);
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "chain", source: "m42b-full-fixture" })');
+        await wait(50);
+        run(`state.chain = 0;
+          BRKTRKStores.project.structure.setChainPhraseRef(0, 0, 0, { source: "m42b-chain-setup" });
+          BRKTRKStores.project.structure.setChainPhraseRef(0, 1, 1, { source: "m42b-chain-setup" });
+          BRKTRKStores.project.structure.setChainTranspose(0, 4, 12, { source: "m42b-chain-setup" });
+          BRKTRKStores.project.structure.setChainTranspose(0, 5, 7, { source: "m42b-chain-setup" }); renderAll()`);
+        await focus("chain", 0, 0);
+        key("ArrowDown", { key: "ArrowDown", shiftKey: true }); await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.pane === "chain" && selection.rowCount === 2 && selection.colCount === 1, "Chain Shift+Arrow selection failed");
+        key("KeyC", { key: "c", ctrlKey: true }); await wait(30);
+        const phraseCount = run("Object.keys(BRKTRKStores.project.getState().phrases).length");
+        doc.querySelector('[data-pane="chain"][data-row="4"][data-col="0"]').click(); await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.startRow === 4 && selection.endRow === 4 && selection.startCol === 0 && selection.endCol === 0, "desktop Chain post-Copy click did not retarget without Escape");
+        key("KeyV", { key: "v", ctrlKey: true }); await wait(50);
+        assert(run("model.chains[0][4].phrase === 0 && model.chains[0][5].phrase === 1"), "Chain Phrase-reference paste failed");
+        assert(run("model.chains[0][4].transpose === 12 && model.chains[0][5].transpose === 7"), "Chain Phrase-only paste overwrote Transpose");
+        assert(run("Object.keys(BRKTRKStores.project.getState().phrases).length") === phraseCount, "Chain copy silently cloned Phrases");
+
+        key("Escape", { key: "Escape" }); await wait(20);
+        await run('BRKTRKCommands.dispatch({ type: "workspace.select", workspace: "phrase", source: "m42b-full-fixture" })');
+        await focus("phrase", 7, 0);
+        key("ArrowRight", { key: "ArrowRight", shiftKey: true }); await wait(35);
+        key("ArrowDown", { key: "ArrowDown", shiftKey: true }); await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.pane === "phrase" && selection.rowCount === 2 && selection.colCount === 2, "desktop Phrase Note+Velocity rectangle failed");
+        key("Escape", { key: "Escape" }); await wait(20);
+        await focus("phrase", 0, 3);
+        key("ArrowRight", { key: "ArrowRight", shiftKey: true }); await wait(35);
+        selection = run("BRKTRKSelectionClipboard.getSelection()");
+        assert(selection.startCol === 3 && selection.endCol === 4, "desktop FX command+value pair selection failed");
+        key("KeyC", { key: "c", ctrlKey: true }); await wait(30);
+        assert(run("JSON.stringify(BRKTRKSelectionClipboard.getClipboardMetadata().fields)") === JSON.stringify(["fx1.command", "fx1.value"]), "desktop FX pair clipboard identity failed");
+        key("Escape", { key: "Escape" }); await wait(20);
+        assert(run("!BRKTRKSelectionClipboard.getSelection().active"), "desktop Escape did not cancel selection");
+
+        const diagnostic = run("BRKTRKSelectionClipboard.snapshot()");
+        assert(diagnostic?.clipboard?.available, "selectionClipboard diagnostic metadata missing");
+        assert(typeof diagnostic?.pasteTarget?.armed === "boolean", "pasteTarget diagnostic metadata missing");
+        assert(!Object.hasOwn(diagnostic.clipboard, "cells"), "diagnostics leaked clipboard payload");
+        assert(!Object.hasOwn(run("state.p3.internalClipboard"), "cells"), "Navigation metadata leaked clipboard payload");
+        result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+      } catch (error) {
+        console.error(error);
+        result.textContent = `FAILED: ${error.message}`;
+      }
+    }, 50), { once: true });
+  </script>
+</body>
+</html>

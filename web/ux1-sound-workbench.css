@@ -1,0 +1,349 @@
+/*
+ * Sound Workbench alpha: real engine parameters, not proxy macros.
+ * PLAY offers an intentional six-control performance page; every other
+ * engine-authored page keeps its full controls and the existing Store sink.
+ * No DSP, parameter ABI or Project schema changes.
+ */
+#instrumentInspector .a4a-sound-shell {
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink);
+}
+#instrumentInspector .a4a-sound-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  background: linear-gradient(165deg, #14202b 0%, #0c151e 100%);
+  border: 1px solid rgba(129, 160, 185, .22);
+  border-radius: 9px;
+  padding: 9px;
+}
+#instrumentInspector .a4a-sound-toolbar label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+#instrumentInspector .a4a-sound-toolbar label > select,
+#instrumentInspector .a4a-sound-toolbar label > input {
+  min-width: 0;
+  width: 100%;
+  color: var(--ink);
+  background: #0b151f;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+#instrumentInspector .a4a-engine-id {
+  font-size: 9px;
+  color: #718799;
+  overflow-wrap: anywhere;
+}
+#instrumentInspector .a4a-page-tabs {
+  position: sticky;
+  top: -1px;
+  z-index: 5;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  gap: 4px;
+  padding: 7px 0 8px;
+  background: #081018;
+  border-bottom: 1px solid rgba(102, 132, 157, .2);
+}
+#instrumentInspector .a4a-page-tabs button {
+  min-height: 33px;
+  border-radius: 6px;
+  padding: 6px 11px;
+  font-size: 10px;
+  letter-spacing: .055em;
+  font-weight: 750;
+  color: #9eb2c1;
+  background: #101b27;
+  border: 1px solid transparent;
+}
+#instrumentInspector .a4a-page-tabs button[aria-pressed="true"] {
+  color: #f0f6fa;
+  background: #1b2b38;
+  border-color: rgba(65, 215, 236, .62);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+#instrumentInspector .a4a-page-tabs button:focus-visible,
+#instrumentInspector .a4a-param :focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+#instrumentInspector .a4a-param-group {
+  min-width: 0;
+  padding-top: 6px;
+}
+#instrumentInspector .a4a-param-group-title {
+  margin: 0 0 8px;
+  font: 750 10px/1.3 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: .095em;
+  text-transform: uppercase;
+  color: var(--a4a-accent, var(--muted));
+}
+#instrumentInspector .a4a-parameter-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+#instrumentInspector .a4a-param {
+  padding: 8px 2px 9px;
+  min-width: 0;
+}
+#instrumentInspector .a4a-param header strong {
+  font-size: 10px;
+  letter-spacing: .035em;
+  line-height: 1.35;
+}
+#instrumentInspector .a4a-param output {
+  font-size: 16px;
+}
+/* The selected parameter is a genuine interaction state, independent of
+   which card the most recent mouse/touch gesture happened to focus. */
+#instrumentInspector .a4a-parameter-grid[data-layout="detail"] .a4a-param.p301-keyboard-focus,
+#instrumentInspector .a4a-parameter-grid[data-layout="detail"] .a4a-param:focus-within {
+  background: rgba(255, 75, 156, .075);
+  box-shadow: inset 3px 0 0 var(--pink), inset 0 -1px 0 var(--line-soft);
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param.p301-keyboard-focus,
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param:focus-within {
+  background: linear-gradient(150deg, #222435, #101721);
+  border-color: rgba(255, 75, 156, .60);
+  box-shadow: inset 0 0 0 1px rgba(255, 75, 156, .28), 0 0 0 1px rgba(255, 75, 156, .14);
+}
+#instrumentInspector .a4a-param select {
+  min-height: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  min-height: 139px;
+  min-width: 0;
+  padding: 9px 4px;
+  border: 1px solid rgba(124, 154, 176, .17);
+  border-radius: 9px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.026);
+  background: linear-gradient(150deg, #111e29, #0b141d);
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  text-align: center;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param header strong {
+  max-width: 100%;
+  min-height: 16px;
+  font-size: 10px;
+  color: #a6bac9;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param output {
+  color: #f0f8fc;
+  font-weight: 750;
+  font-size: 13px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+#instrumentInspector .a4a-knob-wheel {
+  position: relative;
+  flex: none;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: conic-gradient(from 225deg,
+    var(--a4a-accent, var(--cyan)) 0 var(--a4a-knob-arc, 0deg),
+    #324451 var(--a4a-knob-arc, 0deg) 270deg,
+    transparent 270deg 360deg);
+  box-shadow: 0 1px 5px rgba(0,0,0,.3);
+}
+#instrumentInspector .a4a-knob-wheel::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: #0d1822;
+}
+#instrumentInspector .a4a-knob-dial {
+  position: absolute;
+  inset: 11px;
+  display: block;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 25%, #40505d 0%, #23323e 48%, #101b26 100%);
+  border: 1px solid rgba(177,195,210,.24);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.12), 0 2px 4px rgba(0,0,0,.5);
+}
+#instrumentInspector .a4a-knob-needle {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--a4a-knob-angle, -135deg));
+  pointer-events: none;
+}
+#instrumentInspector .a4a-knob-needle::before {
+  content: "";
+  position: absolute;
+  left: calc(50% - 1.5px);
+  top: 5px;
+  width: 3px;
+  height: 13px;
+  border-radius: 3px;
+  background: #e0f6ff;
+  box-shadow: 0 0 6px rgba(53,215,233,.5);
+}
+#instrumentInspector .a4a-knob-wheel:focus-within {
+  outline: 2px solid var(--pink);
+  outline-offset: 3px;
+}
+#instrumentInspector input.a4a-knob-input[type="range"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param[data-control="enum"] {
+  display: flex;
+  align-items: stretch;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param[data-control="enum"] header {
+  display: flex;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param[data-control="enum"] output {
+  display: none;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param[data-control="enum"] select {
+  margin: auto 0;
+  min-height: 48px;
+  width: 100%;
+  padding: 8px 18px 8px 6px;
+  text-align: center;
+  text-align-last: center;
+  font-size: 12px;
+  white-space: normal;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param small {
+  display: none;
+}
+#instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param small.a4a-filter-bypass-hint {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  color: var(--amber);
+  font-size: 9px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  opacity: 1;
+}
+@media (max-width:760px) {
+  #instrumentInspector .a4a-sound-toolbar select,
+  #instrumentInspector .a4a-sound-toolbar input,
+  #instrumentInspector .a4a-page-tabs button,
+  #instrumentInspector .a4a-param select { min-height: 44px; }
+  #instrumentInspector .a4a-parameter-grid[data-layout="performance"] .a4a-param { min-height: 145px; }
+  #instrumentInspector .a4a-knob-wheel { width: 84px; height: 84px; }
+}
+@media (max-width:330px) {
+  #instrumentInspector .a4a-parameter-grid[data-layout="performance"] { gap: 4px; }
+  #instrumentInspector .a4a-knob-wheel { width: 70px; height: 70px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #instrumentInspector .a4a-knob-wheel,
+  #instrumentInspector .a4a-knob-dial { transition: none; }
+}
+
+/* Deliberate, reversible engine replacement. Kept within the Sound inspector;
+   no modal floats over the Chain/Phrase composition surface. */
+#instrumentInspector .a4a-engine-change {
+  min-height: 32px;
+  justify-self: start;
+  padding: 5px 8px;
+  border: 1px solid rgba(65,215,236,.4);
+  border-radius: 5px;
+  color: var(--cyan);
+  background: rgba(65,215,236,.045);
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+#instrumentInspector .a4a-engine-replace-panel {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(255,184,47,.40);
+  border-radius: 7px;
+  background: #101a22;
+}
+#instrumentInspector .a4a-engine-replace-panel > strong {
+  color: var(--amber);
+  font-size: 11px;
+}
+#instrumentInspector .a4a-engine-replace-panel > small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+#instrumentInspector .a4a-engine-replace-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 5px;
+  min-width: 0;
+}
+#instrumentInspector .a4a-engine-replace-row select {
+  min-width: 0;
+  max-width: 100%;
+  padding: 5px;
+  background: #081018;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+#instrumentInspector .a4a-engine-replace-row button {
+  min-width: 0;
+  padding: 6px;
+  font-size: 10px;
+}
+#instrumentInspector .a4a-engine-replace-panel[data-engine-replace-armed="true"] button:first-of-type {
+  color: #061017;
+  background: var(--amber);
+}
+#instrumentInspector .a4a-engine-replace-status {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  #instrumentInspector .a4a-engine-change,
+  #instrumentInspector .a4a-engine-replace-row select,
+  #instrumentInspector .a4a-engine-replace-row button { min-height: 44px; }
+  #instrumentInspector .a4a-engine-replace-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #instrumentInspector .a4a-engine-replace-row select { grid-column: 1 / -1; }
+}

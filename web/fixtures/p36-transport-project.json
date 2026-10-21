@@ -1,0 +1,24 @@
+{
+  "format": "BRKTRK_PROJECT",
+  "formatVersion": 1,
+  "project": {
+    "schemaVersion": 3,
+    "projectName": "transport fixture",
+    "tempo": 137,
+    "song": [[42, -1, -1, -1, -1, -1, -1, -1]],
+    "chains": {
+      "42": [{"phrase": 7, "transpose": 1}]
+    },
+    "phrases": {
+      "7": [
+        {"note": -2, "velocity": 91, "instrument": 3, "fx": [0, 4, 0]},
+        {"note": 60, "velocity": 100, "instrument": -1, "fx": [0, 0, 0]}
+      ]
+    },
+    "transport": {
+      "followPlayhead": true,
+      "scopeLocked": true,
+      "lockedScope": "song"
+    }
+  }
+}

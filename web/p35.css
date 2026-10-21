@@ -1,0 +1,291 @@
+/* BRKTRK Web P3.5 playback context, follow policy and desktop mixer compliance. */
+
+.p35-policy-button {
+  min-width: 72px;
+  padding-inline: 8px;
+  border-left: 1px solid var(--line) !important;
+}
+
+.p35-auto-scope-button { min-width: 86px; }
+.p35-view-button {
+  margin-left: 6px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line) !important;
+}
+
+.p35-policy-button[aria-pressed="true"] {
+  color: var(--green) !important;
+  border-bottom-color: var(--green) !important;
+  background: rgba(80, 220, 130, 0.08) !important;
+}
+
+.p35-view-button[aria-pressed="true"] {
+  color: var(--cyan) !important;
+  border-bottom-color: var(--cyan) !important;
+  background: rgba(50, 215, 238, 0.07) !important;
+}
+
+/* A5 owner-acceptance clarity pass.
+   Runtime state/ownership remains unchanged; this layer projects the legacy
+   internal vocabulary as plain visible language and removes steady-state
+   status duplication from the crowded transport row. */
+#p35ScopeModeButton {
+  font-size: 0 !important;
+}
+#p35ScopeModeButton::after {
+  content: "AUTO";
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#p35FollowButton {
+  min-width: 108px;
+  font-size: 0 !important;
+}
+#p35FollowButton::after {
+  content: "FOLLOW PLAYBACK";
+  font: 900 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+#p35FollowButton[data-follow-state="held"]::after {
+  content: "FOLLOW PAUSED";
+}
+
+/* The playing scope is already shown by the green decorated SONG/CHAIN/PHRASE
+   button. Keep only transitional information as text: APPLYING / UP NEXT. */
+#scopeSwitch .scope-status-token.playing {
+  display: none !important;
+}
+#scopeSwitch .applied-scope-status {
+  min-height: 0 !important;
+}
+
+/* UX0 #440 top-bar hierarchy. This is deliberately presentation-only and uses
+   existing owners: Project becomes the primary context, transport + scope share
+   one playback treatment, tempo remains directly editable but secondary, and a
+   genuinely playable audio owner collapses to status instead of competing with
+   transport. Disabled/error/verifying/no-instrument audio remains a full
+   actionable control. Phone keeps the P3.6 compact owner model unchanged. */
+@media (min-width: 761px) {
+  .brand {
+    color: var(--dim);
+    font-size: 15px;
+    letter-spacing: -0.025em;
+  }
+  .edition {
+    color: var(--dim);
+    font-size: 8px;
+  }
+  .project-name {
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .transport-cluster,
+  .scope-switch {
+    background: rgba(69, 227, 148, 0.025);
+  }
+
+  .tempo-cluster {
+    opacity: 0.76;
+    transition: opacity 120ms ease;
+  }
+  .tempo-cluster:hover,
+  .tempo-cluster:focus-within {
+    opacity: 1;
+  }
+
+  /* This is still the only implemented live master output meter. Keep it in
+     the header until Mixer owns a real signal meter; reduce its visual weight
+     rather than deleting truthful feedback. */
+  .topbar-status .meter-pair {
+    opacity: 0.58;
+  }
+
+  /* Lifecycle ready is not the same thing as playable. audio-lifecycle-ui owns
+     the readiness truth on this existing dataset; only the fully playable state
+     is allowed to collapse to a compact dot. */
+  .engine-button[data-audio-readiness-state="playable"] {
+    width: 38px;
+    min-width: 38px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+  .engine-button[data-audio-readiness-state="playable"] > span:last-child {
+    display: none;
+  }
+  .engine-button[data-audio-readiness-state="playable"] .status-dot {
+    width: 9px;
+    height: 9px;
+  }
+
+  /* Base chrome historically keys its green dot from aria-pressed, which tracks
+     lifecycle status only. Override that optimistic colour while readiness is
+     still verifying or lacks a playable production Instrument. */
+  .engine-button[aria-pressed="true"]:not([data-audio-readiness-state="playable"]) .status-dot {
+    background: var(--amber);
+    box-shadow: none;
+  }
+
+  .topbar-status .icon-button,
+  .topbar-status .settings-button {
+    color: var(--muted);
+  }
+}
+
+/* Phone uses the same policy. Keep compatibility HOLD/FIXED text in the DOM for
+   the mature state regressions, but do not collapse its rendered font to zero:
+   the visible navigation vocabulary is an absolute overlay that does not widen
+   the compact control. */
+.p36-mobile-policy-button small {
+  position: relative;
+  font-size: 7px !important;
+  color: transparent !important;
+}
+.p36-mobile-policy-button small::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  content: "FOLLOW";
+  color: var(--muted);
+  font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.p36-mobile-policy-button[data-follow-state="hold"] small::after {
+  content: "PAUSED";
+  color: var(--amber);
+}
+.p36-mobile-policy-button[data-follow-state="fixed"] small::after {
+  content: "MANUAL";
+  color: var(--muted);
+}
+
+#p36MobileFollow {
+  font-size: 0 !important;
+}
+#p36MobileFollow::after {
+  content: "FOLLOW PLAYBACK · ON";
+  font-size: 9px;
+  font-weight: 900;
+}
+#p36MobileFollow[data-follow-state="hold"]::after {
+  content: "RESUME FOLLOWING";
+}
+#p36MobileFollow[data-follow-state="fixed"]::after {
+  content: "FOLLOW PLAYBACK · OFF";
+}
+
+.p35-playback-context {
+  min-width: 0;
+  margin-left: auto;
+  padding: 0 8px;
+  overflow: hidden;
+  color: var(--green);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 800 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.p35-playback-context[data-match="other"] { color: var(--amber); }
+
+.grid-cell .p35-effective-note {
+  margin-left: 5px;
+  color: var(--green);
+  font-size: 7px;
+  font-weight: 900;
+}
+
+@media (min-width: 761px) {
+  .mixer {
+    grid-template-columns: repeat(9, minmax(70px, 1fr)) !important;
+    grid-auto-rows: minmax(0, 1fr) !important;
+  }
+
+  .channel {
+    grid-template-rows: auto minmax(58px, 1fr) minmax(82px, 1.4fr) !important;
+    text-align: center;
+  }
+
+  .channel-header { justify-content: center; flex-wrap: wrap; }
+
+  .channel-meter {
+    width: 7px;
+    height: 100%;
+    min-height: 54px;
+    justify-self: center;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .channel-meter i {
+    width: 100% !important;
+    min-height: 0;
+  }
+
+  .channel-controls {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(68px, 1fr) 26px auto;
+    justify-items: center;
+    align-items: center;
+  }
+
+  .channel input[type="range"].p35-vertical-fader {
+    width: 30px;
+    height: 100%;
+    min-height: 68px;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    -webkit-appearance: slider-vertical;
+    appearance: auto;
+  }
+
+  .channel .pan-readout {
+    min-width: 44px;
+    white-space: nowrap;
+  }
+
+  .channel.master .channel-controls { display: grid; place-items: center; }
+}
+
+/* #472: between 1040 and 1279 the whole PLAY group now shares row one, so it
+   pays only for the words it needs. The visible label is this ::after layer,
+   not the element text - shortening textContent alone changes nothing. The
+   buttons themselves stay buttons: transport-state-ui paints i1-playing-scope
+   / i1-queued-scope / i1-applying-scope on them, which is live-performance
+   information a single dropdown could not carry. */
+@media (max-width: 1279px) and (min-width: 1000px) {
+  .p35-policy-button { min-width: 0; padding-inline: 4px; font-size: 7px; }
+  .p35-auto-scope-button { min-width: 0; }
+  .p35-view-button { margin-left: 4px; padding-left: 7px; }
+  .scope-switch { gap: 2px; padding-inline: 6px; }
+  /* Each control sizes to its own label and no further. Without this the flex
+     row squeezes them below their text - AUTO measured 12px wide, which is a
+     clipped control rather than a compact one. */
+  .scope-switch button { flex: none; min-width: 28px; padding-inline: 4px; }
+  /* The base rule is an ID selector, so a class cannot release this floor. */
+  #p35FollowButton { min-width: 0; }
+  #p35ScopeModeButton::after,
+  #p35FollowButton::after { font-size: 7px; }
+  /* FOLLOW PAUSED still says the whole thing: it is the state that needs
+     explaining, and it only shows while following is actually held. */
+  #p35FollowButton::after { content: "FOLLOW"; }
+}
+
+@media (max-width: 999px) and (min-width: 761px) {
+  .p35-policy-button { min-width: 58px; padding-inline: 5px; font-size: 7px; }
+  .p35-auto-scope-button { min-width: 76px; }
+  .p35-view-button { min-width: 100px; margin-left: 4px; padding-left: 7px; }
+  #p35ScopeModeButton::after,
+  #p35FollowButton::after { font-size: 7px; }
+  .mixer { grid-template-columns: repeat(9, minmax(64px, 1fr)) !important; gap: 4px; }
+  .channel { padding: 4px; }
+  .channel-header small { display: none; }
+  .channel .pan-readout { min-width: 38px; font-size: 6.5px; }
+}
+
+@media (max-width: 760px) {
+  .p35-playback-context {
+    max-width: 58vw;
+    padding-inline: 4px;
+    font-size: 7px;
+  }
+}

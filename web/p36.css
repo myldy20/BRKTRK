@@ -1,0 +1,353 @@
+/* BRKTRK Web P3.6-P3.7 independent Song transport and compact policy UI. */
+
+.p35-playback-context {
+  flex: 0 1 440px;
+  width: 440px;
+  max-width: min(440px, 52vw);
+  margin-left: 12px;
+  margin-right: auto;
+  padding-inline: 0;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.p35-playback-context[data-silent="true"] { color: var(--muted); }
+
+.p36-queue-marker,
+.p36-playing-marker {
+  position: absolute;
+  top: 2px;
+  min-width: 12px;
+  height: 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 2px;
+  font: 950 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+}
+
+.p36-queue-marker {
+  right: 2px;
+  background: var(--amber);
+  color: #170e00;
+}
+
+.p36-playing-marker {
+  left: 2px;
+  background: var(--green);
+  color: #021209;
+}
+
+.grid-cell.p36-queued-cell,
+.grid-cell.p36-playing-reference {
+  position: relative;
+}
+
+.grid-cell.p36-queued-cell {
+  box-shadow: inset -3px 0 0 var(--amber);
+}
+
+.grid-cell.p36-playing-reference {
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+.grid-cell.p36-playing-reference.p36-queued-cell {
+  box-shadow: inset 3px 0 0 var(--green), inset -3px 0 0 var(--amber);
+}
+
+.applied-scope-status {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+}
+
+.scope-status-token {
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.025);
+  font: 850 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.045em;
+  white-space: nowrap;
+}
+
+.scope-status-token.playing { color: var(--green); }
+.scope-status-token.queued { color: var(--amber); }
+.scope-status-token.applying { color: var(--pink); }
+
+/* Playing and queued scope carry a glyph as well as a colour. The AUTO policy
+   button is green while AUTO is active and the playing scope button is green
+   while it plays, so two adjacent buttons in the same cluster read as the same
+   green state with different meanings - and the disambiguating PLAYING/UP NEXT
+   text is deliberately suppressed here to avoid duplicating them. The glyph is
+   the orthogonal channel that keeps "what is playing" readable without
+   reintroducing that duplicate text or relying on colour alone. */
+#scopeSwitch button.i1-playing-scope {
+  border-color: var(--green) !important;
+  color: var(--green) !important;
+  box-shadow: inset 0 -2px 0 var(--green) !important;
+}
+
+#scopeSwitch button.i1-playing-scope::before {
+  content: "\25B6";
+  margin-right: 3px;
+  font-size: 7px;
+  line-height: 1;
+}
+
+#scopeSwitch button.i1-queued-scope::before {
+  content: "\23F1";
+  margin-right: 3px;
+  font-size: 7px;
+  line-height: 1;
+}
+
+#scopeSwitch button.i1-queued-scope {
+  border-color: var(--amber) !important;
+  color: var(--amber) !important;
+  box-shadow: inset 0 -2px 0 var(--amber) !important;
+}
+
+#scopeSwitch button.i1-applying-scope {
+  border-color: var(--pink) !important;
+  color: var(--pink) !important;
+  box-shadow: inset 0 -2px 0 var(--pink) !important;
+}
+
+#p35FollowButton[data-follow-state="held"] {
+  border-color: var(--muted);
+  color: var(--muted);
+  border-style: dashed;
+}
+
+.p36-mobile-policy-button,
+.p36-mobile-policy-panel { display: none; }
+
+@media (min-width: 761px) {
+  .mixer-section { overflow: hidden; }
+
+  .mixer {
+    grid-template-columns: repeat(9, minmax(76px, 1fr)) !important;
+    grid-auto-rows: minmax(0, 1fr) !important;
+    align-items: stretch;
+  }
+
+  .channel {
+    grid-template-columns: 9px minmax(28px, 1fr) 38px !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    grid-template-areas:
+      "head head head"
+      "meter controls controls";
+    column-gap: 7px !important;
+    row-gap: 5px !important;
+    overflow: hidden;
+  }
+
+  .channel-header {
+    grid-area: head;
+    min-height: 14px;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  .channel-meter {
+    grid-area: meter;
+    width: 7px !important;
+    height: 100% !important;
+    min-height: 82px !important;
+    align-self: stretch;
+    justify-self: center;
+  }
+
+  .channel-controls {
+    grid-area: controls;
+    min-width: 0;
+    min-height: 0;
+    display: grid !important;
+    grid-template-columns: minmax(28px, 1fr) 36px !important;
+    grid-template-rows: minmax(0, 1fr) 27px !important;
+    gap: 5px !important;
+    align-items: stretch !important;
+    justify-items: center !important;
+    overflow: visible;
+  }
+
+  .channel input[type="range"].p35-vertical-fader {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 30px !important;
+    height: 100% !important;
+    min-height: 92px !important;
+    align-self: stretch;
+  }
+
+  .channel-controls > button {
+    grid-column: 2;
+    grid-row: 1;
+    width: 34px !important;
+    height: 26px !important;
+    align-self: start;
+    justify-self: center;
+  }
+
+  .channel .pan-readout {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 34px !important;
+    align-self: center;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 1279px) and (min-width: 761px) {
+  .p35-playback-context {
+    flex-basis: 360px;
+    width: 360px;
+    max-width: 40vw;
+    font-size: 7px;
+  }
+
+  .mixer { grid-template-columns: repeat(9, minmax(66px, 1fr)) !important; }
+  .channel { grid-template-columns: 7px minmax(24px, 1fr) 31px !important; column-gap: 4px !important; }
+  .channel-controls { grid-template-columns: minmax(24px, 1fr) 29px !important; gap: 3px !important; }
+  .channel-controls > button { width: 28px !important; }
+  .channel .pan-readout { min-width: 28px !important; font-size: 6px; }
+}
+
+@media (max-width: 760px) {
+  /* Settings remains a real phone top-bar owner (p2.css). Keep all four grid
+     areas explicit, but use the compact 112px brand floor that fits the full
+     transport + policy + tempo + Settings row at the 360px acceptance width.
+     The brand track is sized by its content rather than by slack: an open 1fr
+     handed it every spare pixel, so at 640px the brand owned 398px of a 640px
+     bar and the three interactive owners were crammed against the right edge.
+     space-between now distributes that slack between owners instead. */
+  .topbar {
+    grid-template-columns: minmax(112px, auto) auto auto 38px;
+    grid-template-areas: "brand transport tempo settings";
+    justify-content: space-between;
+  }
+  /* Bounds the brand track by content instead of slack, and keeps a long
+     project name from reclaiming the hogged width through max-content. A
+     definite max here would outrank the auto transport track and crush the
+     transport/policy owners at 360px, so the cap belongs on the item. */
+  .brand-block { max-width: 232px; }
+
+  .p35-playback-context {
+    width: auto;
+    max-width: 55vw;
+    margin-left: 5px;
+    margin-right: auto;
+  }
+
+  .applied-scope-status {
+    max-width: 100%;
+    gap: 2px;
+  }
+
+  .scope-status-token {
+    min-height: 16px;
+    padding-inline: 4px;
+    font-size: 6px;
+  }
+
+  .p36-mobile-policy-button {
+    width: 48px;
+    height: 38px;
+    padding: 3px 2px;
+    display: grid;
+    place-items: center;
+    gap: 1px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--cyan);
+    font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .p36-mobile-policy-button b { font-size: 7px; }
+  .p36-mobile-policy-button small {
+    width: 42px;
+    max-width: 42px;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 7px;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .p36-mobile-policy-button[data-follow-state="hold"] small { color: var(--amber); }
+
+  .p36-mobile-policy-panel {
+    position: fixed;
+    z-index: 120;
+    left: 8px;
+    right: 8px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    padding: 10px;
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    border: 1px solid var(--pink);
+    border-radius: 8px;
+    background: #091019;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.72);
+  }
+
+  .p36-mobile-policy-panel[aria-hidden="false"] { display: grid; }
+
+  .p36-mobile-policy-panel header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .p36-mobile-policy-panel header span,
+  .p36-mobile-policy-panel header strong { display: block; }
+  .p36-mobile-policy-panel header span { color: var(--muted); font-size: 7px; }
+  .p36-mobile-policy-panel header strong { margin-top: 2px; font-size: 12px; }
+  .p36-mobile-policy-panel header button { width: 38px; height: 38px; font-size: 20px; }
+
+  .p36-mobile-policy-panel > button,
+  .p36-mobile-scope-grid button {
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: 9px;
+    font-weight: 900;
+  }
+
+  .p36-mobile-policy-panel button[aria-pressed="true"] {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(80, 220, 130, 0.08);
+  }
+
+  #p36MobileFollow[data-follow-state="hold"] {
+    border-color: var(--amber);
+    color: var(--amber);
+    border-style: dashed;
+  }
+
+  .p36-mobile-scope-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+
+  .p36-mobile-policy-panel p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 8px;
+    line-height: 1.35;
+  }
+}

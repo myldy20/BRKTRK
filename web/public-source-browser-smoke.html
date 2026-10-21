@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>BRKTRK clean public clone browser smoke</title></head>
+<body>
+<strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+<iframe id="app" src="./index.html" width="1210" height="828" title="BRKTRK public browser smoke" style="position:absolute;top:32px;left:0;border:0"></iframe>
+<script>
+(() => {
+  const result = document.querySelector("#result");
+  const frame = document.querySelector("#app");
+  const width = Number(new URL(location.href).searchParams.get("width") || 1210);
+  if (!Number.isInteger(width) || ![1210, 390].includes(width)) {
+    result.textContent = "BRKTRK_BROWSER_TESTS_FAILED: invalid viewport";
+    return;
+  }
+  frame.width = width;
+  frame.height = width < 600 ? 844 : 828;
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const stage = (name) => { result.textContent = "BRKTRK_BROWSER_TESTS_STAGE: " + name; };
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  frame.addEventListener("load", () => {
+    void (async () => {
+      const app = frame.contentWindow;
+      const doc = frame.contentDocument;
+      stage("APP_BOOTSTRAP_" + width);
+      let ready = false;
+      for (let attempt = 0; attempt < 500; attempt += 1) {
+        ready = doc?.body?.dataset?.bootstrapInput === "ready"
+          && doc?.querySelector("#appShell")?.inert === false
+          && typeof app?.BRKTRKStores?.project?.getState === "function"
+          && typeof app?.BRKTRKProductionEngineHost?.ensurePackageView === "function";
+        if (ready) break;
+        await wait(50);
+      }
+      assert(ready, "real app did not reach editable boot state · viewport=" + width
+        + " / bootstrap=" + (doc?.body?.dataset?.bootstrapInput ?? "unknown")
+        + " / status=" + (doc?.querySelector("#statusLine")?.textContent ?? "none"));
+      const shell = doc.querySelector("#appShell");
+      assert(app.getComputedStyle(shell).visibility === "visible", "app shell not visible");
+      assert(doc.querySelector("#playButton")?.isConnected, "transport missing");
+      assert(doc.querySelector("#tempoUp")?.isConnected, "tempo controls missing");
+      assert(app.BRKTRKStores.project.getState().projectName !== undefined, "ProjectStore unavailable");
+      assert(app.innerWidth === width, "iframe viewport failed to apply expected width");
+
+      stage("CATALOG_" + width);
+      const host = app.BRKTRKProductionEngineHost;
+      const entries = await host.refreshCatalog();
+      const entry = entries.find((item) =>
+        item.moduleId === "design.myldy.dev"
+        && item.engineId === "brk-dev-poly"
+        && item.channel === "stable");
+      assert(entry, "genuine local development synth missing from trusted catalog");
+
+      stage("HASH_VERIFIED_PACKAGE_" + width);
+      const view = await host.ensurePackageView({
+        moduleId: entry.moduleId,
+        engineId: entry.engineId,
+        requestedVersion: entry.version,
+      });
+      assert(view?.entry?.packageSha256 === entry.packageSha256,
+        "local synth package identity/hash not verified");
+      assert(view.parameters?.length === 9,
+        "genuine development synth parameter registry must expose nine parameters");
+      assert(!doc.body.dataset.bootstrapInput || doc.body.dataset.bootstrapInput === "ready",
+        "input was unexpectedly re-locked");
+      result.dataset.diagnostics = JSON.stringify({
+        viewport: width, engine: entry.moduleId + "/" + entry.engineId,
+        version: entry.version, parameters: view.parameters.length, schema: "public-v1",
+      });
+      result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+    })().catch((error) => {
+      result.textContent = "BRKTRK_BROWSER_TESTS_FAILED: "
+        + String(error?.message ?? error).slice(0, 600);
+    });
+  }, { once: true });
+})();
+</script>
+</body>
+</html>

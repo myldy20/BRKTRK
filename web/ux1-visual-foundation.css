@@ -1,0 +1,465 @@
+/*
+ * UX1-A (#537) — visual foundation for the next BRKTRK interface.
+ *
+ * This stylesheet deliberately does not change tracker schemas, DOM ownership,
+ * transport/audio semantics or input commands. It is a reversible visual layer
+ * over the current Song/Chain/Phrase renderers while the new shell is validated.
+ */
+
+:root {
+  --bg: #05090e;
+  --surface: #081018;
+  --surface-2: #0b151f;
+  --surface-3: #101d29;
+  --line: #263b4d;
+  --line-soft: rgba(82, 111, 136, .24);
+  --ink: #e9f0f5;
+  --muted: #8da0b2;
+  --dim: #53697c;
+  --cyan: #35d7e9;
+  --pink: #ff4b9c;
+  --green: #49e59a;
+  --amber: #ffba3b;
+  --danger: #ff6f7d;
+  --radius: 5px;
+}
+
+/* One dark instrument surface, not a stack of dashboard cards. */
+.app-shell {
+  background:
+    radial-gradient(circle at 68% 18%, rgba(31, 72, 98, .08), transparent 38%),
+    linear-gradient(180deg, #05090e 0%, #060b11 100%);
+}
+
+.topbar {
+  border-bottom-color: rgba(82, 111, 136, .34);
+  background: rgba(4, 9, 14, .98);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .45);
+}
+
+.brand-block,
+.transport-cluster,
+.tempo-cluster,
+.scope-switch,
+.topbar-status {
+  border-left-color: rgba(82, 111, 136, .20);
+}
+
+.brand {
+  color: #bfeffc;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .23em;
+}
+
+.edition {
+  color: var(--dim);
+  font-size: 8px;
+  letter-spacing: .10em;
+}
+
+.project-name {
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.transport-button,
+.icon-button,
+.micro-button,
+.preview-button,
+.engine-button,
+.scope-switch button,
+.utility-panels button {
+  border-color: rgba(82, 111, 136, .43);
+  background: rgba(11, 21, 31, .82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .018);
+}
+
+.transport-button:hover,
+.icon-button:hover,
+.micro-button:hover,
+.preview-button:hover,
+.engine-button:hover,
+.scope-switch button:hover,
+.utility-panels button:hover {
+  border-color: rgba(116, 150, 177, .58);
+  background: rgba(15, 28, 40, .94);
+}
+
+.transport-button.play {
+  border-color: rgba(73, 229, 154, .48);
+  color: var(--green);
+}
+
+.transport-button.play[aria-pressed="true"] {
+  background: rgba(73, 229, 154, .17);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: inset 0 -2px 0 var(--green);
+}
+
+.transport-button.stop {
+  color: #b4c1cc;
+}
+
+.tempo-button span {
+  color: var(--dim);
+}
+
+.scope-switch button {
+  border-color: transparent;
+  background: transparent;
+}
+
+.scope-switch button[aria-pressed="true"] {
+  border-color: rgba(255, 75, 156, .54);
+  background: rgba(255, 75, 156, .08);
+  color: var(--pink);
+  box-shadow: inset 0 -2px 0 var(--pink);
+}
+
+.utility-panels button {
+  background: rgba(8, 16, 24, .86);
+}
+
+.utility-panels button[aria-pressed="true"] {
+  border-color: rgba(255, 75, 156, .72);
+  background: rgba(255, 75, 156, .07);
+  color: var(--pink);
+  box-shadow: inset 0 -2px 0 rgba(255, 75, 156, .72);
+}
+
+.engine-button {
+  background: transparent;
+}
+
+.engine-button[aria-pressed="true"] .status-dot {
+  box-shadow: 0 0 8px rgba(73, 229, 154, .5);
+}
+
+.meter-pair i {
+  background: #071018;
+  box-shadow: inset 0 0 0 1px rgba(82, 111, 136, .22);
+}
+
+/* Composition panes keep their real contents; only hierarchy becomes clearer. */
+.workspace {
+  gap: 5px;
+  padding: 5px;
+}
+
+.pane,
+.dock {
+  border-color: rgba(82, 111, 136, .34);
+  border-radius: var(--radius);
+  background: rgba(7, 14, 21, .88);
+  box-shadow: none;
+}
+
+.pane.active-pane::before {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--pink) 30%, var(--pink) 70%, transparent 100%);
+  opacity: .72;
+}
+
+.pane-header,
+.subpane-header,
+.dock-tabs-row {
+  border-bottom-color: rgba(82, 111, 136, .27);
+  background: rgba(8, 16, 24, .88);
+}
+
+.pane-header .eyebrow,
+.sound-heading .eyebrow {
+  color: var(--dim);
+  letter-spacing: .14em;
+}
+
+.pane-header h1,
+.subpane-header strong,
+.sound-heading h2 {
+  color: #dfeaf1;
+  letter-spacing: .04em;
+}
+
+.active-editor-copy span {
+  color: var(--pink);
+}
+
+/* Dense tracker surface. No columns or semantic fields are added or removed. */
+.tracker-grid {
+  background: rgba(5, 11, 17, .55);
+}
+
+.grid-header {
+  background: rgba(9, 18, 27, .97);
+  border-bottom-color: rgba(82, 111, 136, .42);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .28);
+}
+
+.grid-header > span {
+  color: #70889b;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+
+.grid-row {
+  border-bottom-color: rgba(82, 111, 136, .16);
+}
+
+.grid-row.beat-row {
+  background: rgba(53, 215, 233, .018);
+}
+
+.grid-row.active-row {
+  background: rgba(255, 75, 156, .025);
+}
+
+.grid-row.playing-row {
+  background: rgba(73, 229, 154, .055);
+}
+
+.grid-row.playing-row::before,
+.grid-row.queued-row::before {
+  width: 2px;
+  top: 1px;
+  bottom: 1px;
+}
+
+.grid-cell {
+  border-right-color: rgba(82, 111, 136, .15);
+  font-variant-numeric: tabular-nums;
+}
+
+.grid-cell.index {
+  color: #62798c;
+}
+
+.grid-cell.value {
+  color: var(--cyan);
+}
+
+.grid-cell.instrument {
+  color: #79eab1;
+}
+
+.grid-cell.fx {
+  color: #ff72b1;
+}
+
+.grid-cell.empty,
+.grid-cell.inoperative {
+  color: #435667;
+}
+
+/* Focus is a framed edit location rather than a large solid paint block. */
+.grid-cell.selected {
+  position: relative;
+  z-index: 3;
+  background: rgba(255, 75, 156, .13);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 1px var(--pink),
+    inset 3px 0 0 rgba(255, 75, 156, .9);
+  font-weight: 900;
+}
+
+.grid-cell.linked:not(.selected) {
+  color: var(--cyan);
+  box-shadow: inset 0 0 0 1px rgba(53, 215, 233, .48);
+}
+
+.grid-cell.context-selected:not(.selected):not(.linked) {
+  background: rgba(255, 75, 156, .045);
+  box-shadow: inset 2px 0 0 rgba(255, 75, 156, .38);
+}
+
+.song-grid .grid-header > span.active-track {
+  color: var(--pink);
+  box-shadow: inset 0 -1px 0 var(--pink);
+}
+
+/* Sound keeps the honest row-per-parameter grammar from current main. */
+#soundDock,
+#mixerSection {
+  background: rgba(7, 14, 21, .96);
+}
+
+#instrumentInspector .a4a-sound-toolbar,
+#instrumentInspector .a4b-preset-panel {
+  border-bottom-color: rgba(82, 111, 136, .22);
+}
+
+#instrumentInspector .a4a-page-tabs button[aria-pressed="true"] {
+  background: rgba(255, 75, 156, .055);
+  border-bottom-color: var(--pink);
+}
+
+#instrumentInspector .a4a-param {
+  box-shadow: inset 0 -1px 0 rgba(82, 111, 136, .20);
+}
+
+#instrumentInspector .a4a-param.p301-keyboard-focus,
+#instrumentInspector .a4a-param:focus-within {
+  background: rgba(255, 75, 156, .055);
+}
+
+/* Bottom row is status, not another visual toolbar. */
+.command-bar {
+  border-top-color: rgba(82, 111, 136, .30);
+  background: rgba(4, 9, 14, .98);
+}
+
+.status-line {
+  color: #8fa2b4;
+}
+
+.edit-breadcrumb {
+  color: #a9bac8;
+}
+
+.key-legend {
+  opacity: .72;
+}
+
+/* Portrait keeps the existing five-workspace product contract. */
+@media (max-width: 760px) {
+  .topbar {
+    background: rgba(4, 9, 14, .99);
+  }
+
+  .workspace {
+    padding: 4px;
+  }
+
+  .pane,
+  .dock {
+    border-radius: 4px;
+  }
+
+  .grid-header > span {
+    color: #71899d;
+  }
+
+  .grid-cell.selected {
+    background: rgba(255, 75, 156, .14);
+    box-shadow:
+      inset 0 0 0 1px var(--pink),
+      inset 3px 0 0 var(--pink);
+  }
+
+  .mobile-tabs {
+    border-top-color: rgba(82, 111, 136, .34);
+    background: rgba(4, 9, 14, .985);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, .18);
+  }
+
+  .mobile-tabs button {
+    color: #667d90;
+  }
+
+  .mobile-tabs button.active {
+    color: var(--pink);
+    background: rgba(255, 75, 156, .065);
+    box-shadow: inset 0 2px 0 rgba(255, 75, 156, .85);
+  }
+
+  .p32-value-dock,
+  .p3-note-dock,
+  .m41b-phone-fx-dock,
+  .p3-context-picker,
+  .p36-mobile-policy-panel {
+    border-color: rgba(82, 111, 136, .44);
+    background: rgba(7, 14, 21, .985);
+    box-shadow: 0 -18px 48px rgba(0, 0, 0, .42);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transport-button,
+  .icon-button,
+  .micro-button,
+  .preview-button,
+  .engine-button,
+  .scope-switch button,
+  .utility-panels button {
+    transition: none !important;
+  }
+}
+
+/* UX1-C (#537) — top-bar visual convergence. Geometry remains with the
+   established top-bar owners; this visual layer only changes hierarchy. */
+@media (min-width: 761px) {
+  .edition { display: inline; }
+
+  .brand-block {
+    padding-inline: 12px 10px;
+    gap: 10px;
+    border-right: 1px solid rgba(82, 111, 136, .24);
+  }
+
+  .project-name {
+    flex: 1 1 auto;
+    max-width: 220px;
+    padding-left: 10px;
+    border-left-color: rgba(82, 111, 136, .27);
+  }
+
+  .transport-cluster,
+  .tempo-cluster,
+  .scope-switch {
+    background: rgba(7, 15, 22, .68);
+  }
+
+  .transport-cluster { border-left: 0; padding-right: 5px; }
+  .tempo-cluster { border-left: 0; padding-left: 4px; padding-right: 4px; }
+  .scope-switch { border-left: 0; padding-left: 5px; }
+
+  .transport-button {
+    min-width: 70px;
+    height: 36px;
+    border-radius: 4px;
+  }
+
+  .tempo-button { width: 58px; height: 38px; }
+  .tempo-button strong { font-size: 18px; }
+  .scope-switch button { min-height: 32px; border-radius: 3px; }
+
+  .topbar-status {
+    margin-left: 3px;
+    padding-left: 9px;
+    border-left: 1px solid rgba(82, 111, 136, .31);
+    background: rgba(4, 9, 14, .99);
+  }
+
+  .topbar-status .meter-pair { opacity: .46; }
+  .topbar-status .icon-button,
+  .topbar-status .settings-button { background: transparent; }
+
+  .engine-button[data-audio-readiness-state="playable"] {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1119px) {
+  .scope-switch {
+    padding-inline: 10px;
+    background: rgba(7, 15, 22, .76);
+    border-top-color: rgba(82, 111, 136, .25);
+  }
+
+  .scope-switch::before {
+    content: "PLAY";
+    margin-right: 5px;
+    color: var(--dim);
+    font: 850 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .12em;
+  }
+}
+
+@media (max-width: 760px) {
+  .edition { display: none !important; }
+}

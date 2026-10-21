@@ -1,0 +1,4 @@
+.edition::after {
+  content: " · 0.9.0";
+  color: var(--pink);
+}

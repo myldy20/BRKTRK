@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>M4.3A3 recovery browser smoke</title></head>
+<body>
+  <strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+  <iframe id="app" width="390" height="844" title="BRKTRK A3 recovery test" style="position:absolute;left:0;top:30px;border:0"></iframe>
+  <script>
+    const result = document.querySelector("#result");
+    const frame = document.querySelector("#app");
+    const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const STORAGE_KEY = "brktrk-web-v2-alpha-1";
+    const JOURNAL_KEY = `${STORAGE_KEY}:journal:v1`;
+    const A5_PACKAGE_SHA = "43ae3453349bb98dc61d4d8267178d328f72e78c569010862f4161f50fc9d58e";
+
+    const waitLoad = () => new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+    const waitReady = async () => {
+      const run = (source) => frame.contentWindow.eval(source);
+      const expression = "Boolean(globalThis.BRKTRKProjectFileSession?.installed && globalThis.BRKTRKProjectRecovery?.installed && globalThis.BRKTRKUndoRedo?.installed && globalThis.BRKTRKBootstrapInput?.isBlocked?.() === false)";
+      for (let attempt = 0; attempt < 400 && !run(expression); attempt += 1) await wait(20);
+      assert(run(expression), "A3 recovery stack must load after bootstrap input release");
+      return run;
+    };
+
+    (async () => {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(`${STORAGE_KEY}:staging`);
+        localStorage.removeItem(JOURNAL_KEY);
+
+        const firstLoad = waitLoad();
+        frame.src = "./index.html?a3-recovery-pass=1";
+        await firstLoad;
+        let run = await waitReady();
+        assert(run("BRKTRKProjectRecovery.snapshot().status === 'idle'"), "fresh launch must start with clear recovery journal");
+
+        const baselineText = run(`(() => {
+          const candidate = makeInitialModel();
+          candidate.projectName = "A3 RECOVERY";
+          candidate.tempo = 165;
+          candidate.instrumentPool = candidate.instrumentPool || {};
+          candidate.instrumentPool[3] = {
+            id: 3,
+            name: "A5.3 BRK WAV",
+            engineRef: {
+              moduleId: "design.myldy.brk-wav",
+              engineId: "brk-wav",
+              requestedVersion: "0.1.0-rc5",
+              resolvedVersion: "0.1.0-rc5",
+              resolvedPackageSha256: ${JSON.stringify(A5_PACKAGE_SHA)},
+              hostContract: "brktrk-synth-gateway-v1"
+            },
+            patchState: { schemaVersion: 131072, encoding: "opaque", data: "A5_3_BROWSER_OPAQUE_PATCH" },
+            parameterSnapshot: { cutoff: 0.34, filter_mode: 0.25, level: 0.78 },
+            presetRef: {
+              id: "factory:a5-3-browser",
+              name: "A5.3 Browser Factory",
+              bank: "Factory",
+              origin: "engine-package",
+              readOnly: true,
+              moduleId: "design.myldy.brk-wav",
+              engineId: "brk-wav",
+              version: "0.1.0-rc5",
+              packageSha256: ${JSON.stringify(A5_PACKAGE_SHA)}
+            },
+            provenance: { source: "a5-3-browser-recovery", packageSha256: ${JSON.stringify(A5_PACKAGE_SHA)} }
+          };
+          BRKTRKProjectStorage.installRuntimeProject(candidate);
+          return BRKTRKProjectFile.serializeProject(candidate, {
+            unknownEnvelope: { futureOuter: { keep: true } },
+            producer: { app: "A3-FIXTURE", version: "1", futureProducer: { keep: true } },
+          });
+        })()`);
+        const opened = await run(`BRKTRKProjectFileSession.dispatch({
+          type: "project.open",
+          force: true,
+          file: { text: ${JSON.stringify(baselineText)}, fileName: "recovery.brktrk", handle: null, mode: "upload" }
+        })`);
+        assert(opened.ok === true, "baseline Open must succeed");
+        await wait(260);
+        assert(run("BRKTRKProjectFileSession.snapshot().dirty === false && model.tempo === 165"), "baseline must be clean before crash simulation");
+        assert(run(`model.instrumentPool[3].engineRef.resolvedPackageSha256 === ${JSON.stringify(A5_PACKAGE_SHA)}`), "baseline must retain exact production package identity");
+        assert(run("model.instrumentPool[3].patchState.data === 'A5_3_BROWSER_OPAQUE_PATCH'"), "baseline must retain opaque production patch state");
+        assert(run(`model.instrumentPool[3].presetRef.packageSha256 === ${JSON.stringify(A5_PACKAGE_SHA)}`), "baseline must retain package-bound preset identity");
+        assert(run(`JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})).tempo === 165`), "canonical local autosave must contain clean baseline before last edit");
+        assert(run(`JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})).instrumentPool[3].parameterSnapshot.cutoff === 0.34`), "canonical local autosave must contain clean production cutoff before last edit");
+
+        // This must stand alone: do not let an unrelated later mutation create
+        // the journal and mask a broken parameter-only persistence channel.
+        run("BRKTRKStores.project.setProductionInstrumentParameter(3, 'cutoff', 0.875, { source: 'a5-3-crash-window' })");
+        assert(run("BRKTRKProjectFileSession.snapshot().dirty === true"), "production parameter edit alone must dirty the file session immediately");
+        assert(run(`Boolean(localStorage.getItem(${JSON.stringify(JOURNAL_KEY)}))`), "production parameter edit alone must synchronously create recovery journal");
+        assert(run(`JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})).instrumentPool[3].parameterSnapshot.cutoff === 0.34`), "parameter-only crash simulation must occur before canonical autosave catches the edit");
+        const parameterJournal = run(`JSON.parse(localStorage.getItem(${JSON.stringify(JOURNAL_KEY)}))`);
+        assert(parameterJournal.cleanProject.instrumentPool[3].parameterSnapshot.cutoff === 0.34, "parameter-only journal clean checkpoint must retain baseline cutoff");
+        assert(parameterJournal.dirtyProject.instrumentPool[3].parameterSnapshot.cutoff === 0.875, "parameter-only journal dirty checkpoint must retain newest cutoff");
+        assert(parameterJournal.dirtyProject.instrumentPool[3].engineRef.resolvedPackageSha256 === A5_PACKAGE_SHA, "parameter-only journal must retain exact production package SHA");
+        assert(parameterJournal.dirtyProject.instrumentPool[3].patchState.data === "A5_3_BROWSER_OPAQUE_PATCH", "parameter-only journal must retain opaque production patch state");
+        assert(parameterJournal.dirtyProject.instrumentPool[3].presetRef.packageSha256 === A5_PACKAGE_SHA, "parameter-only journal must retain production preset package identity");
+
+        run("BRKTRKStores.project.setTempo(166, { source: 'a3-crash-window' })");
+        assert(run(`JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})).tempo === 165`), "crash simulation must occur before debounced canonical autosave catches up");
+        const journalBeforeReload = run(`JSON.parse(localStorage.getItem(${JSON.stringify(JOURNAL_KEY)}))`);
+        assert(journalBeforeReload.cleanProject.tempo === 165 && journalBeforeReload.dirtyProject.tempo === 166, "journal must carry clean baseline and newest dirty project");
+        assert(journalBeforeReload.cleanProject.instrumentPool[3].parameterSnapshot.cutoff === 0.34, "journal clean checkpoint must retain production cutoff");
+        assert(journalBeforeReload.dirtyProject.instrumentPool[3].parameterSnapshot.cutoff === 0.875, "journal dirty checkpoint must retain newest production cutoff");
+        assert(journalBeforeReload.dirtyProject.instrumentPool[3].engineRef.resolvedPackageSha256 === A5_PACKAGE_SHA, "journal must retain exact production package SHA");
+        assert(journalBeforeReload.dirtyProject.instrumentPool[3].patchState.data === "A5_3_BROWSER_OPAQUE_PATCH", "journal must retain opaque production patch state");
+        assert(journalBeforeReload.dirtyProject.instrumentPool[3].presetRef.packageSha256 === A5_PACKAGE_SHA, "journal must retain production preset package identity");
+
+        result.textContent = "BRKTRK_BROWSER_TESTS_STAGE: RESTARTING";
+        const secondLoad = waitLoad();
+        frame.src = "./index.html?a3-recovery-pass=2";
+        await secondLoad;
+        run = await waitReady();
+
+        assert(run("model.projectName === 'A3 RECOVERY' && model.tempo === 166"), "restart must restore newest dirty project even when canonical autosave still held baseline");
+        assert(run("model.instrumentPool[3].parameterSnapshot.cutoff === 0.875"), "restart must restore newest dirty production parameter state");
+        assert(run(`model.instrumentPool[3].engineRef.resolvedPackageSha256 === ${JSON.stringify(A5_PACKAGE_SHA)}`), "restart must preserve exact production package identity");
+        assert(run("model.instrumentPool[3].patchState.data === 'A5_3_BROWSER_OPAQUE_PATCH'"), "restart must preserve opaque production patch state");
+        assert(run(`model.instrumentPool[3].presetRef.packageSha256 === ${JSON.stringify(A5_PACKAGE_SHA)}`), "restart must preserve production preset package identity");
+        assert(run("BRKTRKProjectFileSession.snapshot().dirty === true"), "recovered project must remain dirty relative to last clean checkpoint");
+        assert(run("BRKTRKProjectFileSession.snapshot().fileName === 'recovery.brktrk'"), "recovery must restore serializable file identity metadata");
+        assert(run("BRKTRKProjectFileSession.snapshot().bindingMode === 'recovery' && BRKTRKProjectFileSession.snapshot().hasHandle === false"), "recovery must never fabricate opaque FileSystemHandle ownership");
+        assert(run("BRKTRKProjectFileSession.recoveryContext().unknownEnvelope.futureOuter.keep === true"), "unknown outer envelope metadata must survive recovery");
+        assert(run("BRKTRKProjectRecovery.snapshot().status === 'recovered' && BRKTRKProjectRecovery.snapshot().pending === true"), "recovery diagnostics must expose active recovered state");
+        assert(run("document.querySelector('#recoveryStatus').textContent.includes('UNSAVED WORK RESTORED')"), "Settings recovery status must explain restored unsaved work");
+        assert(run("Boolean(document.querySelector('#discardRecoveryButton'))"), "recovered session must expose explicit Discard Recovery action");
+
+        const debugSnapshot = await run("BRKTRKDiagnostics.buildSnapshot()");
+        assert(debugSnapshot.registeredSections.includes("projectRecovery"), "Debug JSON must register projectRecovery section");
+        assert(debugSnapshot.custom.projectRecovery.pending === true, "Debug JSON must expose pending recovery state");
+        assert(!Object.hasOwn(debugSnapshot.custom.projectRecovery, "cleanProject"), "Debug JSON must not duplicate full clean Project payload in recovery diagnostics");
+        assert(!Object.hasOwn(debugSnapshot.custom.projectRecovery, "dirtyProject"), "Debug JSON must not duplicate full dirty Project payload in recovery diagnostics");
+
+        const discarded = run("BRKTRKProjectRecovery.discardRecovery()");
+        assert(discarded.ok === true, "Discard Recovery must succeed");
+        await wait(30);
+        assert(run("model.tempo === 165"), "Discard Recovery must restore clean checkpoint");
+        assert(run("model.instrumentPool[3].parameterSnapshot.cutoff === 0.34"), "Discard Recovery must restore clean production parameter checkpoint");
+        assert(run(`model.instrumentPool[3].engineRef.resolvedPackageSha256 === ${JSON.stringify(A5_PACKAGE_SHA)}`), "Discard Recovery must retain exact production package identity");
+        assert(run("BRKTRKProjectFileSession.snapshot().dirty === false"), "discarded recovery baseline must be clean");
+        assert(run(`localStorage.getItem(${JSON.stringify(JOURNAL_KEY)}) === null`), "Discard Recovery must clear active journal");
+        assert(run("!document.querySelector('#discardRecoveryButton')"), "Discard Recovery action must disappear after resolution");
+
+        result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+      } catch (error) {
+        console.error(error);
+        result.textContent = `FAILED: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>

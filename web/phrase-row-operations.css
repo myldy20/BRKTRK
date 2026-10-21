@@ -1,0 +1,17 @@
+/* M4.2B2 — Phrase row operation controls reuse the accepted M4.2B phone action typography. */
+
+#m42bSelectionActions [hidden] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  #m42bSelectionActions[data-phrase-row-actions="true"] {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  #m42bSelectionActions[data-phrase-row-actions="true"] button {
+    padding-inline: 2px;
+    font-size: 8.5px;
+    letter-spacing: 0.015em;
+  }
+}

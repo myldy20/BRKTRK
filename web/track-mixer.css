@@ -1,0 +1,564 @@
+.track-bus-channel {
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 4px;
+  display: grid;
+  grid-template-rows: 22px minmax(0, 1fr) !important;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #0a121b;
+}
+
+.track-bus-channel.active {
+  border-color: var(--pink);
+  box-shadow: inset 0 2px 0 rgba(255, 63, 146, 0.55);
+  background: rgba(255, 63, 146, 0.045);
+}
+
+.track-bus-channel .channel-header {
+  min-width: 0;
+  justify-content: center;
+  padding: 0;
+}
+
+.track-bus-channel .channel-header strong {
+  color: var(--ink);
+  font: 900 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.track-bus-controls {
+  min-height: 0;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 27px !important;
+  grid-template-rows: minmax(86px, 1fr) 27px !important;
+  gap: 4px !important;
+  align-items: stretch !important;
+}
+
+/* The mixer rendered six type sizes, two of them below any readable
+   threshold: pan centre at 5.5px and mute state at 4.5px. Those were not a
+   styling choice so much as the consequence of fitting four controls into a
+   72px channel. With the channel now proportional there is room for one
+   scale - 7 / 8 / 9 / 12 - and state text can simply be legible. */
+.track-mix-control {
+  min-width: 0;
+  color: var(--muted);
+  font: 750 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.track-mix-control output {
+  color: var(--cyan);
+  font: 850 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.track-gain-control {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  grid-template-rows: minmax(62px, 1fr) auto;
+  justify-items: center;
+  align-items: center;
+  gap: 3px;
+}
+
+.track-gain-control > span {
+  display: none;
+}
+
+.track-gain-control .track-gain-range {
+  width: 28px !important;
+  height: 100% !important;
+  min-height: 62px;
+  margin: 0;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: auto;
+  accent-color: var(--cyan);
+  touch-action: none;
+}
+
+.track-pan-control {
+  display: none !important;
+}
+
+.track-pan-trigger {
+  --pan-angle: 0deg;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 1px !important;
+  display: grid;
+  grid-template-rows: 23px 8px;
+  place-items: center;
+  gap: 1px;
+  color: var(--cyan) !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+}
+
+.track-pan-knob-face {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(76, 223, 255, 0.12), transparent 48%),
+    #0a151f;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.018), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.track-pan-knob-face::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 2px;
+  height: 7px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 4px rgba(76, 223, 255, 0.34);
+  transform: rotate(var(--pan-angle));
+  transform-origin: 50% 9px;
+}
+
+.track-pan-trigger output {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: clip;
+  white-space: nowrap;
+  font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.track-pan-trigger.centered .track-pan-knob-face {
+  border-color: rgba(255, 184, 47, 0.48);
+}
+
+.track-pan-trigger.centered output {
+  color: var(--amber);
+}
+
+.track-pan-trigger:hover .track-pan-knob-face,
+.track-pan-trigger:focus-visible .track-pan-knob-face,
+.track-pan-trigger.adjusting .track-pan-knob-face {
+  border-color: var(--pink);
+  box-shadow: inset 0 0 0 2px rgba(255, 63, 146, 0.08), 0 0 0 1px rgba(255, 63, 146, 0.18);
+}
+
+.track-pan-trigger:hover output,
+.track-pan-trigger:focus-visible output,
+.track-pan-trigger.adjusting output {
+  color: var(--pink);
+}
+
+.track-pan-trigger:focus-visible {
+  outline: 1px solid var(--pink);
+  outline-offset: 1px;
+}
+
+.track-mute-control {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  width: 27px !important;
+  height: auto !important;
+  min-height: 42px;
+  padding: 4px 1px !important;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  gap: 2px;
+  color: var(--muted);
+  border-color: var(--line) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.track-mute-control span {
+  font: 900 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.track-mute-control small {
+  color: currentColor;
+  font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+}
+
+.track-mute-control[aria-pressed="true"] {
+  color: var(--amber) !important;
+  border-color: var(--amber) !important;
+  background: rgba(255, 183, 77, 0.15) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 183, 77, 0.32);
+}
+
+.track-mute-control[aria-pressed="true"] span {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.track-extension-rack[hidden] {
+  display: none !important;
+}
+
+.master-reserve {
+  min-width: 0;
+  /* UX0-06 (#374): honest, and quiet. It still says what the area is for and
+     that it has no controls; it stops doing so at the volume of a section
+     heading in the middle of a mixer that has none. */
+  padding: 10px 14px !important;
+  display: grid !important;
+  place-items: center;
+  /* The reserve is a `.channel`, so p36.css shaped it with the Track strip's
+     "meter | controls" template. Its single copy element has no grid-area, so
+     it landed in the 7-9px meter track: 47px wide inside a 466px panel,
+     wrapping to 176px tall and clipped on both axes. The reserve has no meter
+     and no controls, so it owns a single-cell grid instead. */
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, auto) !important;
+  grid-template-areas: none !important;
+  border-color: rgba(255, 63, 146, 0.26) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 63, 146, 0.022), transparent 48%),
+    #0a1018 !important;
+}
+
+.master-reserve-copy {
+  max-width: min(420px, 100%);
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.master-reserve-copy strong {
+  color: var(--muted);
+  font: 900 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+}
+
+.master-reserve-copy span {
+  color: var(--muted);
+  font: 800 7px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+}
+
+.master-reserve-copy small {
+  color: var(--dim);
+  font: 750 7px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (min-width: 761px) {
+  .mixer {
+    /* Channels were capped at 72px while Master took `1fr` - every spare pixel.
+       At 1440 that gave eight working channels 611px between them and the
+       Master placard 794px, for a placard with no controls in it. Both tracks
+       are now proportional, so the split holds at every width instead of
+       depending on how much room is left over.
+
+       The fixture sets the floor, not the value: it requires
+       `tracksWidth < mixerWidth * 0.72` and `masterWidth > channelWidth * 2.5`
+       (scripts/run-track-mixer-cdp-fixture.mjs:331), which with 8 channels at
+       1fr and Master at Nfr need N > 3.11 and N > 2.5 respectively.
+
+       This is the revisit that comment asked for, in the direction UX0-06
+       (#374) names: reduce the placeholder's footprint until real Master
+       controls exist. 6fr held a stable 41-42% of the Mixer at every audited
+       desktop width - 519px against an 86px channel at 1280 - to say that
+       there is nothing here yet. Eight working channels shared 58% with the
+       placeholder taking 42%.
+
+       4fr keeps Master plainly the widest element and the reservation
+       obvious, stays clear of both fixture floors, and hands the difference
+       to the channels that carry real state. Size N against what real Master
+       controls measure once they exist, not against either estimate. */
+    grid-template-columns: repeat(8, minmax(58px, 1fr)) minmax(240px, 4fr) !important;
+    grid-auto-rows: minmax(0, 1fr) !important;
+    justify-content: stretch;
+    align-items: stretch;
+  }
+
+  .mixer > .track-bus-channel {
+    width: 100%;
+  }
+
+  .mixer > .master-reserve {
+    grid-column: 9;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  .mixer {
+    grid-template-columns: repeat(8, minmax(50px, 1fr)) minmax(170px, 4fr) !important;
+    gap: 4px !important;
+  }
+
+  .track-bus-channel {
+    padding-inline: 3px;
+  }
+
+  .master-reserve {
+    padding-inline: 10px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .mixer-section {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .mixer {
+    min-width: 304px;
+    grid-template-columns: repeat(8, minmax(34px, 1fr)) !important;
+    grid-auto-rows: minmax(188px, 1fr) !important;
+    gap: 3px !important;
+    align-items: stretch;
+  }
+
+  .track-bus-channel {
+    min-width: 0;
+    min-height: 188px;
+    padding: 3px;
+    grid-template-rows: 18px minmax(0, 1fr) !important;
+    gap: 3px;
+    border-radius: 4px;
+  }
+
+  .track-bus-channel .channel-header strong {
+    font-size: 7px;
+  }
+
+  .track-bus-controls {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(102px, 1fr) 30px 44px !important;
+    gap: 3px !important;
+  }
+
+  .track-gain-control {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-rows: minmax(78px, 1fr) auto;
+    gap: 2px;
+  }
+
+  .track-gain-control .track-gain-range {
+    width: 27px !important;
+    min-height: 78px;
+  }
+
+  .track-gain-control output {
+    font-size: 6px;
+  }
+
+  .track-mute-control {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100% !important;
+    height: 30px !important;
+    min-height: 30px;
+    padding: 2px 1px !important;
+    grid-template-columns: auto auto;
+    grid-template-rows: 1fr;
+    gap: 2px;
+  }
+
+  .track-mute-control span {
+    font-size: 8px;
+  }
+
+  .track-mute-control small {
+    font-size: 6px;
+  }
+
+  .track-pan-trigger {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100% !important;
+    min-width: 0;
+    height: 44px !important;
+    min-height: 44px;
+    grid-template-rows: 28px 8px;
+    padding: 3px 0 !important;
+  }
+
+  .track-pan-knob-face {
+    width: 25px;
+    height: 25px;
+  }
+
+  .track-pan-knob-face::after {
+    top: 2px;
+    height: 8px;
+    transform-origin: 50% 10.5px;
+  }
+
+  .track-pan-trigger output {
+    font-size: 6px;
+  }
+
+  .mixer > .channel.master {
+    display: none !important;
+  }
+}
+
+/* Desktop Pan/Mute separation contract */
+#mixer .track-bus-channel {
+  grid-template-areas:
+    "head"
+    "controls" !important;
+}
+
+#mixer .track-bus-channel > .channel-header {
+  grid-area: head !important;
+}
+
+#mixer .track-bus-channel > .track-bus-controls {
+  grid-area: controls !important;
+}
+
+@media (min-width: 761px) {
+  #mixer .track-bus-controls {
+    grid-template-columns: minmax(0, 1fr) 34px !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    column-gap: 7px !important;
+    row-gap: 0 !important;
+    align-items: stretch !important;
+  }
+
+  #mixer .track-gain-control {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    align-self: stretch !important;
+  }
+
+  #mixer .track-secondary-controls {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 34px;
+    display: grid;
+    grid-template-columns: 34px;
+    grid-template-rows: 34px 34px;
+    align-content: start;
+    gap: 8px;
+  }
+
+  #mixer .track-pan-trigger,
+  #mixer .track-mute-control {
+    position: static !important;
+    inset: auto !important;
+    grid-column: 1 !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    margin: 0 !important;
+    align-self: start !important;
+    z-index: auto !important;
+  }
+
+  #mixer .track-pan-trigger {
+    grid-row: 1 !important;
+    padding: 1px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 23px 8px !important;
+    gap: 1px !important;
+  }
+
+  #mixer .track-mute-control {
+    grid-row: 2 !important;
+    padding: 3px 1px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #mixer .track-secondary-controls { display: contents; }
+}
+
+/* Wide-desktop Instrument and Mixer share the right inspector. Eight real
+   channel strips form four pairs; the empty Master reservation takes no space. */
+@media (min-width: 1180px) {
+  #inspectorPane .mixer-section { overflow-y: auto; }
+  #inspectorPane .mixer {
+    height: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: minmax(130px, 16dvh) !important;
+    gap: 6px !important;
+  }
+  #inspectorPane .mixer > .master-reserve { display: none !important; }
+  #inspectorPane .mixer-output-latency { grid-template-columns: auto minmax(0, 1fr); }
+  #inspectorPane .mixer-output-latency-note { grid-column: 1 / -1; }
+}
+
+/* The output path's own latency, stated beside the channel strip rather than
+   inside the Master placard: `.mixer > .channel.master` is display:none under
+   760px, so a reading living in the Master would be invisible on exactly the
+   device that needs it. It is a reading and not a control - nothing here
+   changes the signal. */
+.mixer-output-latency {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 63, 146, 0.22);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 63, 146, 0.035), transparent 60%), #0a1018;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.mixer-output-latency-label {
+  color: var(--dim);
+  font: 900 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.17em;
+}
+
+.mixer-output-latency-value {
+  color: var(--ink);
+  font: 900 14px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.mixer-output-latency-note {
+  min-width: 0;
+  color: var(--muted);
+  font: 750 7px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Past the point where playing along stops working, the number says so itself
+   instead of waiting to be interpreted. */
+.mixer-output-latency[data-output-latency-band="late"] .mixer-output-latency-value {
+  color: var(--amber);
+}
+
+.mixer-output-latency[data-output-latency-band="late"] {
+  border-color: rgba(255, 184, 47, 0.42);
+}
+
+.mixer-output-latency[data-output-latency-band="unknown"] .mixer-output-latency-value {
+  color: var(--dim);
+}
+
+/* On a phone the note needs the whole width rather than a third of 390px. */
+@media (max-width: 760px) {
+  .mixer-output-latency {
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-top: 8px;
+  }
+
+  .mixer-output-latency-note {
+    grid-column: 1 / -1;
+  }
+}

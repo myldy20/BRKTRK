@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>M4.2A Undo Redo browser smoke</title>
+  <link rel="stylesheet" href="./undo-redo.css">
+</head>
+<body>
+  <footer class="command-bar"></footer>
+  <strong id="result">PENDING</strong>
+  <script>
+    (() => {
+      const project = { schemaVersion: 2, projectName: "TEST", tempo: 120, tracks: [] };
+      const listeners = new Map();
+      const calls = [];
+      window.__fixtureProject = project;
+      window.__fixtureCalls = calls;
+      window.BRKTRKStores = {
+        project: {
+          getState: () => project,
+          subscribe(channel, listener) {
+            if (!listeners.has(channel)) listeners.set(channel, new Set());
+            listeners.get(channel).add(listener);
+            return () => listeners.get(channel)?.delete(listener);
+          },
+          publish(changeSet, channels) {
+            calls.push({ target: changeSet.target, channels: [...channels] });
+            for (const channel of channels) {
+              for (const listener of [...(listeners.get(channel) ?? [])]) listener(changeSet, project);
+            }
+          },
+        },
+      };
+      window.setStatus = () => {};
+      window.renderAll = () => {};
+      window.BRKTRKDiagnostics = {
+        registerSection(name, provider) {
+          window.__diagnosticName = name;
+          window.__diagnosticProvider = provider;
+        },
+      };
+      window.__persistEdit = (target, mutate, transaction = null) => {
+        mutate(project);
+        window.BRKTRKStores.project.publish({
+          owner: "project",
+          target,
+          persistsProject: true,
+          affectsPlayback: true,
+          transaction,
+          source: "fixture",
+        }, ["persistence"]);
+      };
+    })();
+  </script>
+  <script src="./undo-redo.js"></script>
+  <script>
+    (() => {
+      const result = document.querySelector("#result");
+      const assert = (condition, message) => { if (!condition) throw new Error(message); };
+      try {
+        assert(BRKTRKUndoRedo?.installed, "controller did not install");
+        assert(document.querySelector("#undoButton"), "touch Undo control missing");
+        assert(document.querySelector("#redoButton"), "touch Redo control missing");
+        assert(window.__diagnosticName === "undoRedo", "diagnostic section not registered");
+
+        __persistEdit("project.tempo", (project) => { project.tempo = 130; });
+        assert(BRKTRKUndoRedo.snapshot().undoDepth === 1, "project persistence boundary was not recorded");
+        document.querySelector("#undoButton").click();
+        assert(__fixtureProject.tempo === 120, "touch Undo did not restore canonical state");
+        assert(BRKTRKUndoRedo.snapshot().redoDepth === 1, "Redo stack not populated after Undo");
+        document.querySelector("#redoButton").click();
+        assert(__fixtureProject.tempo === 130, "touch Redo did not restore canonical state");
+
+        __persistEdit("project.tempo", (project) => { project.tempo = 140; });
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true }));
+        assert(__fixtureProject.tempo === 130, "Ctrl+Z did not use the same history controller");
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }));
+        assert(__fixtureProject.tempo === 140, "Ctrl+Shift+Z did not Redo");
+
+        const diagnostic = window.__diagnosticProvider();
+        assert(diagnostic.undoDepth >= 1, "diagnostic history depth missing");
+        assert(!Object.hasOwn(diagnostic, "undoStack") && !Object.hasOwn(diagnostic, "redoStack"), "diagnostics must not export historical project snapshots");
+        assert(__fixtureCalls.some((entry) => entry.target === "project.history.undo" && entry.channels.includes("audio")), "Undo restore did not reach audio subscribers");
+        assert(__fixtureCalls.some((entry) => entry.target === "project.history.redo" && entry.channels.includes("track-mix")), "Redo restore did not reach Track Mix subscribers");
+
+        result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+      } catch (error) {
+        console.error(error);
+        result.textContent = `FAILED: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>

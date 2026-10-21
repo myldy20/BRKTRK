@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>M4.2A phone action readability smoke</title></head>
+<body>
+  <strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+  <iframe id="app" src="./index.html" width="390" height="844" title="BRKTRK phone action test" style="position:absolute;left:0;top:30px;border:0"></iframe>
+  <script>
+    const result = document.querySelector("#result");
+    const frame = document.querySelector("#app");
+    const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+
+    frame.addEventListener("load", () => {
+      window.setTimeout(async () => {
+        try {
+          const run = (source) => frame.contentWindow.eval(source);
+          const phoneActionsReady = "Boolean(globalThis.BRKTRKBootstrapInput?.commandArchitectureReady?.() && globalThis.BRKTRKBootstrapInput?.isBlocked?.() === false && globalThis.BRKTRKTouchActions && globalThis.BRKTRKUndoRedo?.installed && globalThis.BRKTRKCommands?.installed)";
+          const readinessDeadline = Date.now() + 20000;
+          while (Date.now() < readinessDeadline && !run(phoneActionsReady)) await wait(20);
+          assert(run(phoneActionsReady), "Production input must finish ordered bootstrap before fixture mutation: " + run("JSON.stringify(globalThis.BRKTRKBootstrapInput?.snapshot?.())"));
+          assert(run("Boolean(globalThis.BRKTRKTouchActions && globalThis.BRKTRKUndoRedo?.installed)"), "phone action and history controllers must load");
+
+          run('document.querySelector("#mobileTabs [data-view=phrase]").click()');
+          await wait(80);
+          run('setFocus("phrase", 0, 0, true); phrase(state.phrase)[0].note = EMPTY; BRKTRKTouchActions.refresh()');
+          await wait(80);
+
+          assert(run('document.querySelector("#p34TouchActions").hidden === false'), "contextual phone action bar must be visible");
+          assert(run('document.querySelector("#p34Edit").textContent === "EDIT NOTE"'), "semantic EDIT NOTE label must remain intact");
+          assert(run('document.querySelector("#p34Edit").dataset.labelLines === "2"'), "EDIT NOTE must use deterministic two-line presentation");
+          assert(run('document.querySelectorAll("#p34Edit .p34-action-line").length === 2'), "two-line label spans must render");
+          assert(run('document.querySelector("#p34Clear").textContent === "NOTE OFF" && document.querySelector("#p34Clear").dataset.labelLines === "2"'), "NOTE OFF must remain readable on two lines");
+          assert(run('document.querySelector("#p34Back").textContent === "‹ CHAIN" && document.querySelector("#p34Back").dataset.labelLines === "1"'), "compact hierarchy return label must stay single-line");
+          assert(run('document.querySelector("#p34Edit").getAttribute("aria-label") === "EDIT NOTE"'), "visual line splitting must preserve accessible full label");
+
+          const minWidth = run('Math.min(...[...document.querySelectorAll("#p34TouchActions button:not([hidden])")].map((button) => button.getBoundingClientRect().width))');
+          assert(minWidth >= 56, `390px phone contextual actions must remain at least 56px wide, got ${minWidth}`);
+          assert(run('[...document.querySelectorAll("#p34TouchActions button:not([hidden])")].every((button) => button.getBoundingClientRect().height >= 44)'), "contextual actions must retain 44px touch height");
+          assert(run('[...document.querySelectorAll("#p34TouchActions button:not([hidden])")].every((button) => button.scrollWidth <= button.clientWidth + 1 && button.scrollHeight <= button.clientHeight + 1)'), "contextual action labels must not clip or overflow");
+          assert(run('document.querySelector("#undoButton").getBoundingClientRect().width === 44 && document.querySelector("#redoButton").getBoundingClientRect().width === 44'), "phone history arrows must stay compact while contextual actions receive remaining width");
+          assert(run('parseFloat(getComputedStyle(document.querySelector("#p34Edit")).fontSize) >= 8.5'), "contextual action text must not regress to tiny 7.5px type");
+
+          result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+        } catch (error) {
+          console.error(error);
+          result.textContent = `FAILED: ${error.message}`;
+        }
+      }, 50);
+    }, { once: true });
+  </script>
+</body>
+</html>

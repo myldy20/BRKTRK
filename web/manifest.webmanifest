@@ -1,0 +1,20 @@
+{
+  "name": "BRKTRK Web 0.9.0",
+  "short_name": "BRKTRK",
+  "description": "Adaptive browser tracker workstation",
+  "version": "0.9.0",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05080d",
+  "theme_color": "#05080d",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

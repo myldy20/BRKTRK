@@ -1,0 +1,17 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const policy = require("./project-transport-policy.js");
+const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "p36-transport-project.json"), "utf8"));
+const normalized = policy.normalize(fixture.project);
+assert.equal(normalized.projectName, "TRANSPORT FIXTURE");
+assert.equal(normalized.tempo, 137);
+assert.equal(normalized.song.length, 64);
+assert.equal(normalized.song[0].length, 8);
+assert.equal(normalized.song[0][0], 42);
+assert.equal(normalized.chains[42][0].phrase, 7);
+assert.equal(normalized.chains[42][0].transpose, 1);
+assert.equal(normalized.phrases[7][0].note, -2);
+assert.equal(normalized.phrases[7][0].fx[1], 4);
+assert.deepEqual(normalized.transport, { followPlayhead: true, scopeLocked: true, lockedScope: "song" });
+console.log("P3.7 project fixture policy tests passed");

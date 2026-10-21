@@ -1,0 +1,208 @@
+/* P3.2 descriptor-backed phone value editor and Mixer drag hotfix. */
+.p32-value-dock, .p32-edit-value-button { display: none; }
+
+.p32-special-tabs {
+  display: flex;
+  gap: 4px;
+}
+.p32-special-tabs[hidden] { display: none !important; }
+.p32-special-tabs button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: 850 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+}
+.p32-special-tabs button[aria-pressed="true"] {
+  border-color: var(--amber);
+  background: rgba(255, 184, 47, .1);
+  color: var(--amber);
+}
+
+@media (min-width: 761px) {
+  .p32-value-dock[data-desktop-special="true"][aria-hidden="false"] {
+    position: fixed;
+    z-index: 64;
+    left: 50%;
+    bottom: calc(var(--command-h) + 10px);
+    width: min(560px, calc(100vw - 24px));
+    transform: translateX(-50%);
+    display: grid;
+    padding: 9px;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(7, 13, 20, .99);
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, .72);
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-header {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-header span {
+    display: block;
+    color: var(--amber);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .08em;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-header strong {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font: 750 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-header button {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-controls {
+    display: grid;
+    grid-template-columns: 72px 58px minmax(92px, 1fr) 58px 72px;
+    gap: 5px;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-controls button,
+  .p32-value-dock[data-desktop-special="true"] .p32-value-controls input,
+  .p32-value-dock[data-desktop-special="true"] .p32-value-actions button {
+    min-height: 38px;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font: 900 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-controls input {
+    padding: 0 8px;
+    text-align: center;
+    color: var(--cyan);
+    font-size: 16px;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 6px;
+  }
+  .p32-value-dock[data-desktop-special="true"] .p32-value-actions .primary {
+    border-color: var(--amber);
+    background: rgba(255, 184, 47, .1);
+    color: var(--amber);
+  }
+}
+
+#mixer .channel input[type="range"] { touch-action: none; }
+
+@media (max-width: 760px) {
+  .p32-edit-value-button:not([hidden]) {
+    display: inline-flex;
+    min-width: 82px;
+    justify-content: center;
+    color: var(--pink);
+    border-color: rgba(255, 63, 146, 0.55);
+  }
+
+  .p32-value-dock {
+    position: fixed;
+    z-index: 64;
+    left: max(5px, env(safe-area-inset-left));
+    right: max(5px, env(safe-area-inset-right));
+    bottom: calc(60px + max(4px, env(safe-area-inset-bottom)));
+    box-sizing: border-box;
+    max-height: calc(100dvh - 78px);
+    padding: 8px;
+    gap: 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(7, 13, 20, 0.99);
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(12px);
+  }
+  .p32-value-dock[aria-hidden="false"] { display: grid; }
+
+  .p32-value-header {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .p32-value-header span {
+    display: block;
+    color: var(--pink);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+  }
+  .p32-value-header strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font: 750 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .p32-value-header button {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font-size: 20px;
+  }
+
+  .p32-value-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(48px, .75fr)) minmax(72px, 1.2fr) repeat(2, minmax(48px, .75fr));
+    gap: 5px;
+  }
+  .p32-value-controls button,
+  .p32-value-controls input,
+  .p32-value-actions button {
+    min-width: 0;
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--ink);
+    font: 900 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .p32-value-controls input {
+    padding: 0 8px;
+    text-align: center;
+    color: var(--cyan);
+    font-size: 18px;
+    outline: none;
+  }
+  .p32-value-controls input:focus { border-color: var(--pink); box-shadow: inset 0 -2px 0 var(--pink); }
+
+  .p32-value-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 6px; }
+  .p32-value-actions .primary {
+    border-color: var(--pink);
+    background: rgba(255, 63, 146, 0.16);
+    color: var(--pink);
+  }
+
+  body.p32-value-open .command-bar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  body.p32-value-open .p3-note-dock { display: none !important; }
+}
+
+@media (max-width: 390px) {
+  .p32-value-dock { padding: 6px; gap: 6px; }
+  .p32-value-controls { gap: 4px; }
+  .p32-value-controls button { font-size: 9px; }
+}

@@ -1,0 +1,59 @@
+.undo-redo-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.history-button {
+  min-width: 58px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line, #243248);
+  border-radius: 6px;
+  background: var(--panel, #0a111d);
+  color: var(--text, #dce7f7);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  cursor: pointer;
+}
+
+.history-button:not(:disabled):hover,
+.history-button:not(:disabled):focus-visible {
+  border-color: var(--magenta, #ff3ea5);
+  color: var(--magenta, #ff3ea5);
+}
+
+.history-button:disabled {
+  opacity: .36;
+  cursor: default;
+}
+
+@media (max-width: 760px) {
+  .undo-redo-controls {
+    gap: 3px;
+    margin-left: 0;
+  }
+
+  .history-button {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+    letter-spacing: 0;
+  }
+
+  #undoButton::before,
+  #redoButton::before {
+    display: block;
+    font: 900 20px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  #undoButton::before { content: "↶"; }
+  #redoButton::before { content: "↷"; }
+}

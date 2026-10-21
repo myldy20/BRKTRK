@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>BRKTRK A5.4 PWA controller</title></head>
+<body>
+  <strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+  <iframe id="fixture" width="960" height="800" title="BRKTRK A5.4 scoped PWA fixture" style="position:absolute;left:0;top:28px;border:0"></iframe>
+  <script>
+    const result = document.querySelector("#result");
+    const frame = document.querySelector("#fixture");
+    let childLoadCount = 0;
+
+    function workerState(worker) {
+      if (!worker) return null;
+      return { scriptURL: worker.scriptURL, state: worker.state };
+    }
+
+    frame.addEventListener("load", () => { childLoadCount += 1; });
+
+    window.BRKTRKA5Controller = Object.freeze({
+      load(targetUrl) {
+        frame.src = String(targetUrl);
+        result.textContent = "BRKTRK_BROWSER_TESTS_PENDING";
+      },
+      reload() {
+        frame.contentWindow.location.reload();
+      },
+      startColdOffline() {
+        try { return frame.contentWindow.BRKTRKColdOffline?.start?.() ?? false; }
+        catch { return false; }
+      },
+      childResult() {
+        try {
+          return frame.contentDocument?.querySelector("#result")?.textContent ?? "NO_RESULT";
+        } catch {
+          return "NO_RESULT";
+        }
+      },
+      childUrl() {
+        try { return frame.contentWindow.location.href; }
+        catch { return ""; }
+      },
+      async childSnapshot() {
+        try {
+          const child = frame.contentWindow;
+          const registration = await child.navigator.serviceWorker.getRegistration();
+          return {
+            loadCount: childLoadCount,
+            url: child.location.href,
+            result: frame.contentDocument?.querySelector("#result")?.textContent ?? "NO_RESULT",
+            controller: workerState(child.navigator.serviceWorker.controller),
+            registration: registration ? {
+              installing: workerState(registration.installing),
+              waiting: workerState(registration.waiting),
+              active: workerState(registration.active),
+            } : null,
+            caches: await caches.keys(),
+            updateRequested: child.localStorage.getItem("brktrk-a5-current-update-requested-v1"),
+            phase: child.localStorage.getItem("brktrk-a5-offline-pwa-phase-v1"),
+            staleMarker: child.localStorage.getItem("brktrk-a5-stale-seeded-v1"),
+          };
+        } catch (error) {
+          return {
+            loadCount: childLoadCount,
+            error: String(error?.message ?? error),
+          };
+        }
+      },
+    });
+  </script>
+</body>
+</html>
