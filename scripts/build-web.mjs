@@ -1,4 +1,5 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve, join, relative, sep } from 'node:path';
 import { Script } from 'node:vm';
 
@@ -142,20 +143,28 @@ const updatedAssets = [...new Set([
   ...bundles,
   './styles.bundle.css',
 ])];
-const worker = originalWorker
-  .replace(workerPattern, 'const BASE_ASSETS = ' + JSON.stringify(updatedAssets, null, 2) + ';')
-  .replace(/brktrk-web-v0\.9\.0"/g, 'brktrk-web-v0.9.0-compact-alpha2"');
-put('sw.js', worker);
-
-// Failure on a missing cached file is preferable to a deployed offline-only black screen.
+// Each release gets a content-addressed SW cache identity. A fixed alpha2
+// cache kept the old trusted engine package/JS when users refreshed a newer build.
+const devCatalog = join(dist, 'engines', 'catalog-v1.json');
+if (!existsSync(devCatalog)) throw new Error('Compact build: run npm run dev:engine first');
+const versionHash = createHash('sha256')
+  .update(originalWorker)
+  .update(readFileSync(devCatalog));
 for (const ref of updatedAssets) {
-  if (ref === './') continue;
+  if (ref === './' || ref === './sw.js') continue;
   if (!ref.startsWith('./') || !existsSync(join(dist, ref.slice(2)))) {
     throw new Error('Compact build: precache points at absent output ' + ref);
   }
+  versionHash.update(ref).update(readFileSync(join(dist, ref.slice(2))));
 }
-const devCatalog = join(dist, 'engines', 'catalog-v1.json');
-if (!existsSync(devCatalog)) throw new Error('Compact build: run npm run dev:engine first');
+const cacheVersion = versionHash.digest('hex').slice(0, 12);
+const worker = originalWorker
+  .replace(workerPattern, 'const BASE_ASSETS = ' + JSON.stringify(updatedAssets, null, 2) + ';')
+  .replace(/brktrk-web-v0\.9\.0"/g, 'brktrk-web-v0.9.0-compact-' + cacheVersion + '"');
+if (!worker.includes('brktrk-web-v0.9.0-compact-' + cacheVersion)) {
+  throw new Error('Compact build: service worker release cache was not versioned');
+}
+put('sw.js', worker);
 console.log('Compact BRKTRK: ' + scripts.length + ' runtime scripts -> ' +
   bundles.length + ' bundles; ' + uniqueStyles.length + ' styles -> 1 CSS; ' +
-  updatedAssets.length + ' offline assets, ' + workletAssets.size + ' worklet modules preserved');
+  updatedAssets.length + ' offline assets, ' + workletAssets.size + ' worklet modules preserved; SW cache ' + cacheVersion);
