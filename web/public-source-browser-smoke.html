@@ -37,7 +37,8 @@
         + " / status=" + (doc?.querySelector("#statusLine")?.textContent ?? "none")
         + " / runtime=" + JSON.stringify(app?.BRKTRKDynamicRuntimeStartup?.snapshot?.() ?? null)
         + " / error=" + (doc?.body?.dataset?.dynamicRuntimeError ?? "none")
-        + " / reason=" + (doc?.body?.dataset?.bootstrapInputReason ?? "none"));
+        + " / reason=" + (doc?.body?.dataset?.bootstrapInputReason ?? "none")
+        + " / boot=" + JSON.stringify(app?.BRKTRKBootstrapInput?.snapshot?.() ?? null));
       const shell = doc.querySelector("#appShell");
       assert(app.getComputedStyle(shell).visibility === "visible", "app shell not visible");
       assert(doc.querySelector("#playButton")?.isConnected, "transport missing");
