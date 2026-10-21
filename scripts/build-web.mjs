@@ -83,8 +83,34 @@ put('styles.bundle.css', css + '\n');
 // One runtime module is also an early bootstrap dependency: retain its source file.
 const bootstrapScripts = new Set([...sourceIndex.matchAll(/<script src="([^"]+)"/g)]
   .map(match => match[1].split('?')[0]));
+
+// AudioWorklet uses its own ES-module graph. Some of its imports are ALSO used
+// by the window runtime bundle. Never remove their standalone files: bundling
+// the window does not make those URLs available to AudioWorkletGlobalScope.
+// Walk transitive imports, so new worklet dependencies are covered automatically.
+const workletAssets = new Set();
+function retainWorkletModule(ref) {
+  assertLocal(ref);
+  if (workletAssets.has(ref)) return;
+  workletAssets.add(ref);
+  const source = readAsset(ref);
+  const imports = source.matchAll(/^\s*import\s+(?:[^"'\n]*?\s+from\s+)?["'](\.[^"']+)["']/gm);
+  for (const match of imports) {
+    const specifier = match[1];
+    if (!specifier.endsWith('.js')) {
+      throw new Error('Compact build: unexpected worklet import ' + specifier + ' in ' + ref);
+    }
+    const fullPath = resolve(join(web, ref.slice(2), '..'), specifier);
+    const localPath = relative(web, fullPath).split(sep).join('/');
+    if (localPath.startsWith('../') || localPath.startsWith('/') || localPath === '..') {
+      throw new Error('Compact build: worklet import escapes web/ ' + specifier);
+    }
+    retainWorkletModule('./' + localPath);
+  }
+}
+retainWorkletModule('./audio-worklet.js');
 const discarded = new Set([
-  ...scripts.filter(ref => !bootstrapScripts.has(ref)),
+  ...scripts.filter(ref => !bootstrapScripts.has(ref) && !workletAssets.has(ref)),
   ...uniqueStyles,
 ]);
 for (const ref of discarded) rmSync(join(dist, ref.slice(2)), { force: true });
@@ -112,12 +138,13 @@ const updatedAssets = [...new Set([
     if (ref.startsWith('./fixtures/') || ref.endsWith('-browser-smoke.html')) return false;
     return true;
   }),
+  ...workletAssets,
   ...bundles,
   './styles.bundle.css',
 ])];
 const worker = originalWorker
   .replace(workerPattern, 'const BASE_ASSETS = ' + JSON.stringify(updatedAssets, null, 2) + ';')
-  .replace(/brktrk-web-v0\.9\.0"/g, 'brktrk-web-v0.9.0-compact-alpha1"');
+  .replace(/brktrk-web-v0\.9\.0"/g, 'brktrk-web-v0.9.0-compact-alpha2"');
 put('sw.js', worker);
 
 // Failure on a missing cached file is preferable to a deployed offline-only black screen.
@@ -131,4 +158,4 @@ const devCatalog = join(dist, 'engines', 'catalog-v1.json');
 if (!existsSync(devCatalog)) throw new Error('Compact build: run npm run dev:engine first');
 console.log('Compact BRKTRK: ' + scripts.length + ' runtime scripts -> ' +
   bundles.length + ' bundles; ' + uniqueStyles.length + ' styles -> 1 CSS; ' +
-  updatedAssets.length + ' offline assets');
+  updatedAssets.length + ' offline assets, ' + workletAssets.size + ' worklet modules preserved');
