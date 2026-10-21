@@ -34,7 +34,10 @@
       }
       assert(ready, "real app did not reach editable boot state · viewport=" + width
         + " / bootstrap=" + (doc?.body?.dataset?.bootstrapInput ?? "unknown")
-        + " / status=" + (doc?.querySelector("#statusLine")?.textContent ?? "none"));
+        + " / status=" + (doc?.querySelector("#statusLine")?.textContent ?? "none")
+        + " / runtime=" + JSON.stringify(app?.BRKTRKDynamicRuntimeStartup?.snapshot?.() ?? null)
+        + " / error=" + (doc?.body?.dataset?.dynamicRuntimeError ?? "none")
+        + " / reason=" + (doc?.body?.dataset?.bootstrapInputReason ?? "none"));
       const shell = doc.querySelector("#appShell");
       assert(app.getComputedStyle(shell).visibility === "visible", "app shell not visible");
       assert(doc.querySelector("#playButton")?.isConnected, "transport missing");
