@@ -95,7 +95,11 @@ put('index.html', index);
 const workerPattern = /const BASE_ASSETS = \[([\s\S]*?)\];/;
 const cached = assetList(mustMatch(originalWorker, workerPattern, 'service worker precache list')[1]);
 const updatedAssets = [...new Set([
-  ...cached.filter(ref => !discarded.has(ref)),
+  ...cached.filter(ref => {
+    if (discarded.has(ref)) return false;
+    if (ref.startsWith('./fixtures/') || ref.endsWith('-browser-smoke.html')) return false;
+    return true;
+  }),
   ...bundles,
   './styles.bundle.css',
 ])];
