@@ -31,22 +31,26 @@ jobs:
         run: npm test
       - name: Package verified local development synth
         run: npm run dev:engine
-      - name: Run real Chromium startup smoke
-        run: npm run test:browser
+      - name: Build compact public web app
+        run: npm run build:web
+      - name: Run Chromium startup smoke against deployed output
+        run: BRKTRK_WEB_DIR=dist npm run test:browser
       - name: Verify Pages payload and engine catalog
         shell: bash
         run: |
           set -euo pipefail
-          test -s web/index.html
-          test -s web/manifest.webmanifest
-          test -s web/sw.js
-          test -s web/engines/catalog-v1.json
-          test ! -e web/.env
+          test -s dist/index.html
+          test -s dist/manifest.webmanifest
+          test -s dist/sw.js
+          test -s dist/engines/catalog-v1.json
+          test ! -e dist/.env
           printf '%s\n' 'GitHub Pages serves this payload at /BRKTRK/; relative PWA URLs stay scoped to it.'
+      - name: Remove browser-only test fixture from release
+        run: rm dist/public-source-browser-smoke.html
       - name: Upload static site artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
-          path: web
+          path: dist
 
   deploy:
     name: Publish GitHub Pages

@@ -202,7 +202,7 @@ if (!ci.includes("runs-on: ubuntu-24.04") || !ci.includes("contents: read")
 const pages = read(".github/workflows/pages.yml");
 if (!pages.includes("runs-on: ubuntu-24.04") ||
     !pages.includes("permissions:") || !pages.includes("pages: write") ||
-    !pages.includes("id-token: write") || !pages.includes("path: web") ||
+    !pages.includes("id-token: write") || !pages.includes("path: dist") || !pages.includes("npm run build:web") || !pages.includes("BRKTRK_WEB_DIR=dist") ||
     !pages.includes("npm run dev:engine") || !pages.includes("npm run test:browser") ||
     !pages.includes("branches: [main]") ||
     /self-hosted|pull_request_target|\/srv\/www|myldy-vps|myldy-home/.test(pages)) {

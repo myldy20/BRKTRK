@@ -29,5 +29,7 @@ jobs:
         run: npm test
       - name: Build local developer engine
         run: npm run dev:engine
-      - name: Chromium first-run, local catalog and package SHA verification
-        run: npm run test:browser
+      - name: Build compact public web app
+        run: npm run build:web
+      - name: Chromium first-run against compact build
+        run: BRKTRK_WEB_DIR=dist npm run test:browser
