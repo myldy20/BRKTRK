@@ -1071,7 +1071,8 @@
         channel: entry.channel ?? "stable",
       }, { channel: entry.channel ?? "stable" });
       stores.project.createProductionInstrument(slot, buildCreationInput(view, slot), { source: "a4-sound-create" });
-      status.textContent = "CREATED";
+      const starter = stores.project.assignStarterPhraseInstrument(slot, { source: "a4-first-instrument-starter" });
+      status.textContent = starter.mutated ? "CREATED · STARTER PATTERN READY" : "CREATED";
       renderProductionSurface();
     } catch (error) {
       console.error(error);
