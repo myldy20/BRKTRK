@@ -45,6 +45,9 @@ const entry = catalog.entries[0];
 // there and must never borrow a production module/engine id.
 assert.equal(entry.moduleId, "design.myldy.dev", "development engine must use its own module id");
 assert.equal(entry.engineId, "brk-dev-poly", "development engine must use its own engine id");
+assert.equal(entry.packageSha256,
+  "49278362f2c49558434f6cb0ab239c18e965e451af594a1cc86698c8094e4463",
+  "the previously published dev-poly archive SHA must not change when new engines are added");
 assert.notEqual(entry.moduleId, "design.myldy.brk-wav", "development engine must not claim the production module id");
 
 const archive = new Uint8Array(readFileSync(join(repoRoot, "web/engines", entry.packageUrl.replace(/^\.\//, ""))));
@@ -653,6 +656,34 @@ async function main() {
     "bytes after the zero terminator must not reach the DSP",
   );
   padded.destroy();
+
+  // FM is a separate hash-pinned GPL runtime, not another name for a
+  // dev-poly preset. Verify the full transported archive and real ABI audio.
+  const fmEntry = catalog.entries[1];
+  const fmArchive = new Uint8Array(readFileSync(join(repoRoot, "web/engines", fmEntry.packageUrl.replace(/^\.\//, ""))));
+  const fmParsed = tarDomain.parseTar(require("node:zlib").gunzipSync(fmArchive));
+  const fmLoader = packageLoader.createPackageLoader({
+    readPackage: async () => ({ packageBytes: fmArchive, manifest: fmParsed.manifest, files: fmParsed.files }),
+    host: {},
+  });
+  const fmLoaded = await fmLoader.load(fmEntry);
+  assert.equal(fmLoaded.manifest.engineId, "brk-dev-fm");
+  assert.deepEqual(fmLoaded.manifest.parameters.find(param => param.id === "shape").values,
+    ["FM 1:2", "FM 1:3", "FM 2:5", "FM 1:7"]);
+  assert.ok(fmLoaded.files["LICENSE.txt"] && fmLoaded.files["NOTICE.txt"], "FM package must be redistributable under GPL");
+  const fmSource = new TextDecoder().decode(fmLoaded.files[fmLoaded.manifest.runtime.directJs]);
+  assert.match(fmSource, /const ratio = \[2, 3, 2\.5, 7\]\[mode\]/,
+    "FM engine must implement 2-operator modulation, not alias the analog waveform DSP");
+  new Function(fmSource)();
+  const fmModule = await globalThis.Module({ wasmBinary: fmLoaded.files[fmLoaded.manifest.runtime.directWasm] });
+  abi.registerModuleRuntime({ entry: fmLoaded.entry, manifest: fmLoaded.manifest, module: fmModule });
+  const fmFactory = preparedAbi.createPerformerFactory(preparedAbi.recordFor(fmLoaded.entry));
+  const fmVoice = fmFactory({ track: 0, instrumentId: nextInstrumentId++, sampleRate: 48000 });
+  const fmNote = renderNote(fmVoice);
+  assert.ok(rms(fmNote) > 0.0005, "FM engine must render audible audio");
+  assert.notDeepEqual([...fmNote], [...presetRenders.get("init")],
+    "FM and analog oscillators must produce different audio on the same note");
+  fmVoice.destroy();
 
   console.log("Development engine package and DSP contract tests passed");
 }
