@@ -84,6 +84,189 @@
         "AudioWorklet did not reach running and verified audio readiness");
       assert(!doc.body.dataset.bootstrapInput || doc.body.dataset.bootstrapInput === "ready",
         "input was unexpectedly re-locked");
+
+      // ALPHA USER JOURNEY: exercise the shipped UI, production project stores,
+      // transport, portable Save As and Open. These are the actual dist assets.
+      // A fresh Chrome profile has no songs, Instruments or test-only shortcuts.
+      stage("ALPHA_FIRST_INSTRUMENT_" + width);
+      const project = app.BRKTRKStores.project;
+      const session = app.BRKTRKProjectFileSession;
+      assert(session?.installed && typeof session.dispatch === "function", "portable project file session missing");
+      assert(Object.keys(project.getState().instrumentPool ?? {}).length === 0,
+        "clean first-run profile must start with no fake Instruments");
+      const instToggle = doc.querySelector('[data-panel="sound"]');
+      assert(instToggle, "Instrument panel shortcut missing");
+      instToggle.click();
+      assert(app.BRKTRKSoundEditRenderer?.renderProductionSurface?.(), "Sound panel did not render");
+      let create = null;
+      for (let attempt = 0; attempt < 120; attempt += 1) {
+        create = doc.querySelector("#instrumentInspector .a4a-create-panel button");
+        if (create && !create.disabled && create.textContent === "CREATE") break;
+        await wait(50);
+      }
+      assert(create && !create.disabled && create.textContent === "CREATE",
+        "a verified synth must offer a usable CREATE action");
+      create.click();
+      for (let attempt = 0; attempt < 160 && !project.getState().instrumentPool?.[0]; attempt += 1) {
+        await wait(50);
+      }
+      const instrument = project.getState().instrumentPool?.[0];
+      assert(instrument?.engineRef?.resolvedPackageSha256 === entry.packageSha256,
+        "CREATE must assign the exact verified synth package");
+      const phrase = project.getState().phrases?.[0];
+      assert(phrase?.[0]?.instrument === 0 && phrase?.[8]?.instrument === 0,
+        "the untouched first-run preview should be assigned to the newly created Instrument");
+      assert(project.getState().song?.[0]?.[0] === 0,
+        "a ready Instrument must not break the Song -> Chain -> Phrase references");
+
+      stage("ALPHA_EDIT_PLAY_STOP_" + width);
+      assert(project.phraseSteps?.replaceStep && project.setTempo,
+        "canonical Phrase/Tempo edit commands missing");
+      const editedStep = { ...project.phraseSteps.read(0, 2), note: 60, velocity: 94, instrument: 0 };
+      const edit = project.phraseSteps.replaceStep(0, 2, editedStep, { source: "alpha-browser-user-journey" });
+      assert(edit.mutated && project.getState().phrases[0][2].note === 60,
+        "new Phrase step was not committed");
+      project.setTempo(137, { source: "alpha-browser-user-journey" });
+      assert(session.snapshot().dirty === true, "project editing should be marked unsaved");
+      doc.querySelector("#playButton").click();
+      let playing = false;
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        playing = app.BRKTRKStores.transport.runtime.isPlaying();
+        if (playing) break;
+        await wait(50);
+      }
+      assert(playing, "the edited Phrase with a verified Instrument did not start playing: "
+        + (doc.querySelector("#statusLine")?.textContent ?? "no status"));
+      app.stopPlayback();
+      for (let attempt = 0; attempt < 100 && app.BRKTRKStores.transport.runtime.isPlaying(); attempt += 1) {
+        await wait(50);
+      }
+      assert(!app.BRKTRKStores.transport.runtime.isPlaying(), "Stop did not clear playing state");
+
+      stage("ALPHA_SAVE_AS_" + width);
+      const expectedProject = JSON.stringify(app.BRKTRKProjectFileSessionDomain.canonicalProject(project.getState()));
+      const capabilities = session.snapshot().capabilities;
+      let fileOnDisk = null;
+      const memoryHandle = {
+        name: "brktrk-alpha-journey.brktrk",
+        async getFile() {
+          return { name: this.name, size: new TextEncoder().encode(fileOnDisk ?? "").byteLength,
+            lastModified: 100, async text() { return fileOnDisk; } };
+        },
+        async createWritable() {
+          let pending = "";
+          return { async write(text) { pending = String(text); },
+            async close() { fileOnDisk = pending; } };
+        },
+      };
+      if (capabilities.directSave) {
+        app.showSaveFilePicker = async () => memoryHandle;
+      } else {
+        // The fallback returns the exact portable bytes but cannot confirm
+        // a disk write. Prevent an actual download from the CI fixture.
+        app.HTMLAnchorElement.prototype.click = function () {};
+      }
+      const saved = await session.dispatch({ type: "project.saveAs", source: "alpha-browser-user-journey" });
+      assert(saved.ok && typeof saved.text === "string", "portable Save As failed");
+      assert(saved.durableWriteConfirmed === Boolean(capabilities.directSave),
+        "download fallback must never claim that a durable file write was confirmed");
+      const portable = saved.text;
+      assert(app.BRKTRKProjectFile.parseEnvelope(portable).format === "BRKTRK_PROJECT",
+        "Save As did not write a supported .brktrk envelope");
+      assert(JSON.stringify(app.BRKTRKProjectFile.prepareOpen(portable).project) === expectedProject,
+        "portable file differs from the edited canonical project");
+      if (capabilities.directSave) {
+        assert(fileOnDisk === portable && session.snapshot().dirty === false,
+          "successful File System Access Save As must establish a clean on-disk baseline");
+      }
+
+      stage("ALPHA_NEW_AND_REOPEN_" + width);
+      const fresh = await session.dispatch({ type: "project.new", force: true, source: "alpha-browser-user-journey" });
+      assert(fresh.ok, "NEW failed after saving a project");
+      assert(Object.keys(project.getState().instrumentPool ?? {}).length === 0,
+        "NEW must remove the previous project's instruments from active state");
+      const opened = await session.dispatch({
+        type: "project.open",
+        force: true,
+        source: "alpha-browser-user-journey",
+        file: { ok: true, text: portable, fileName: memoryHandle.name,
+          mode: capabilities.directSave ? "handle" : "upload",
+          handle: capabilities.directSave ? memoryHandle : null },
+      });
+      assert(opened.ok, "OPEN rejected the recently saved .brktrk file: "
+        + String(opened.error?.message ?? "unknown"));
+      assert(JSON.stringify(app.BRKTRKProjectFileSessionDomain.canonicalProject(project.getState())) === expectedProject,
+        "OPEN lost Song, Phrase, instrument, preset, tempo or project metadata");
+      assert(session.snapshot().dirty === false && project.getState().tempo === 137,
+        "reopened file must start clean with the saved tempo");
+      assert(project.getState().instrumentPool[0].engineRef.resolvedPackageSha256 === entry.packageSha256,
+        "reopened synth must retain the hash-pinned engine identity");
+
+      stage("ALPHA_EDIT_AFTER_OPEN_" + width);
+      project.setTempo(141, { source: "alpha-browser-user-journey-after-open" });
+      assert(session.snapshot().dirty === true, "editing after reopening must mark the project unsaved");
+      if (capabilities.directSave) {
+        const again = await session.dispatch({ type: "project.save", source: "alpha-browser-user-journey-after-open" });
+        assert(again.ok && again.durableWriteConfirmed,
+          "direct SAVE after reopening a file handle must write to the bound file");
+        assert(app.BRKTRKProjectFile.prepareOpen(fileOnDisk).project.tempo === 141,
+          "direct SAVE must include changes made after OPEN");
+        assert(session.snapshot().dirty === false, "successful direct SAVE must restore clean state");
+      }
+      assert(doc.body.dataset.bootstrapInput === "ready" && !doc.querySelector("#appShell").inert,
+        "save/open flow unexpectedly blocked tracker input");
+
+      stage("ALPHA_FULL_PAGE_RELOAD_" + width);
+      // A file can pass a same-tab NEW/OPEN test and still fail after a real
+      // application restart (old Worklet, stale engine registry, dirty state
+      // or service-worker assets). Destroy the iframe document and boot afresh.
+      const persistedFile = capabilities.directSave ? fileOnDisk : portable;
+      const persistedTempo = capabilities.directSave ? 141 : 137;
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("alpha full-page reload timed out")), 25000);
+        frame.addEventListener("load", () => {
+          void (async () => {
+            const nextApp = frame.contentWindow;
+            const nextDoc = frame.contentDocument;
+            for (let attempt = 0; attempt < 400; attempt += 1) {
+              if (nextDoc?.body?.dataset?.bootstrapInput === "ready"
+                  && typeof nextApp?.BRKTRKProjectFileSession?.dispatch === "function") break;
+              await wait(50);
+            }
+            assert(nextDoc.body.dataset.bootstrapInput === "ready",
+              "editor did not boot after a complete iframe navigation");
+            const restored = await nextApp.BRKTRKProjectFileSession.dispatch({
+              type: "project.open", force: true, source: "alpha-browser-reload-open",
+              file: { text: persistedFile, fileName: memoryHandle.name, mode: "upload" },
+            });
+            assert(restored.ok, "fresh application instance failed to OPEN a saved .brktrk file");
+            const restoredProject = nextApp.BRKTRKStores.project.getState();
+            assert(restoredProject.tempo === persistedTempo, "full restart restored an out-of-date project version");
+            assert(restoredProject.phrases[0][2].note === 60
+              && restoredProject.instrumentPool[0].engineRef.resolvedPackageSha256 === entry.packageSha256,
+              "full restart lost the edited note or exact instrument package identity");
+            assert(nextApp.BRKTRKProjectFileSession.snapshot().dirty === false,
+              "opening a project in a new app instance must establish a clean baseline");
+            const packageView = await nextApp.BRKTRKProductionEngineHost.ensurePackageView(restoredProject.instrumentPool[0].engineRef);
+            assert(packageView.entry.packageSha256 === entry.packageSha256,
+              "restarted application cannot resolve the stored hash-pinned synth");
+            await nextApp.BRKTRKAudioReadiness.ensureReady({ source: "alpha-browser-reload-replay" });
+            nextDoc.querySelector("#playButton").click();
+            let resumed = false;
+            for (let attempt = 0; attempt < 100; attempt += 1) {
+              resumed = nextApp.BRKTRKStores.transport.runtime.isPlaying();
+              if (resumed) break;
+              await wait(50);
+            }
+            assert(resumed, "reopened project did not resume playback after full browser navigation");
+            nextApp.stopPlayback();
+            resolve();
+          })().catch(reject).finally(() => clearTimeout(timer));
+        }, { once: true });
+        frame.src = "./index.html?alpha-full-reload=1";
+      });
+
+
       result.dataset.diagnostics = JSON.stringify({
         viewport: width, engine: entry.moduleId + "/" + entry.engineId,
         version: entry.version, parameters: view.parameters.length, schema: "public-v1",
