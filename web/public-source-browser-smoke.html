@@ -216,6 +216,57 @@
       assert(doc.body.dataset.bootstrapInput === "ready" && !doc.querySelector("#appShell").inert,
         "save/open flow unexpectedly blocked tracker input");
 
+      stage("ALPHA_FULL_PAGE_RELOAD_" + width);
+      // A file can pass a same-tab NEW/OPEN test and still fail after a real
+      // application restart (old Worklet, stale engine registry, dirty state
+      // or service-worker assets). Destroy the iframe document and boot afresh.
+      const persistedFile = capabilities.directSave ? fileOnDisk : portable;
+      const persistedTempo = capabilities.directSave ? 141 : 137;
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("alpha full-page reload timed out")), 25000);
+        frame.addEventListener("load", () => {
+          void (async () => {
+            const nextApp = frame.contentWindow;
+            const nextDoc = frame.contentDocument;
+            for (let attempt = 0; attempt < 400; attempt += 1) {
+              if (nextDoc?.body?.dataset?.bootstrapInput === "ready"
+                  && typeof nextApp?.BRKTRKProjectFileSession?.dispatch === "function") break;
+              await wait(50);
+            }
+            assert(nextDoc.body.dataset.bootstrapInput === "ready",
+              "editor did not boot after a complete iframe navigation");
+            const restored = await nextApp.BRKTRKProjectFileSession.dispatch({
+              type: "project.open", force: true, source: "alpha-browser-reload-open",
+              file: { text: persistedFile, fileName: memoryHandle.name, mode: "upload" },
+            });
+            assert(restored.ok, "fresh application instance failed to OPEN a saved .brktrk file");
+            const restoredProject = nextApp.BRKTRKStores.project.getState();
+            assert(restoredProject.tempo === persistedTempo, "full restart restored an out-of-date project version");
+            assert(restoredProject.phrases[0][2].note === 60
+              && restoredProject.instrumentPool[0].engineRef.resolvedPackageSha256 === entry.packageSha256,
+              "full restart lost the edited note or exact instrument package identity");
+            assert(nextApp.BRKTRKProjectFileSession.snapshot().dirty === false,
+              "opening a project in a new app instance must establish a clean baseline");
+            const packageView = await nextApp.BRKTRKProductionEngineHost.ensurePackageView(restoredProject.instrumentPool[0].engineRef);
+            assert(packageView.entry.packageSha256 === entry.packageSha256,
+              "restarted application cannot resolve the stored hash-pinned synth");
+            await nextApp.BRKTRKAudioReadiness.ensureReady({ source: "alpha-browser-reload-replay" });
+            nextDoc.querySelector("#playButton").click();
+            let resumed = false;
+            for (let attempt = 0; attempt < 100; attempt += 1) {
+              resumed = nextApp.BRKTRKStores.transport.runtime.isPlaying();
+              if (resumed) break;
+              await wait(50);
+            }
+            assert(resumed, "reopened project did not resume playback after full browser navigation");
+            nextApp.stopPlayback();
+            resolve();
+          })().catch(reject).finally(() => clearTimeout(timer));
+        }, { once: true });
+        frame.src = "./index.html?alpha-full-reload=1";
+      });
+
+
       result.dataset.diagnostics = JSON.stringify({
         viewport: width, engine: entry.moduleId + "/" + entry.engineId,
         version: entry.version, parameters: view.parameters.length, schema: "public-v1",
