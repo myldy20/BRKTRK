@@ -35,7 +35,9 @@ execFileSync(process.execPath, ["scripts/build-dev-engine-store.mjs"], { cwd: re
 const catalog = packageDomain.normalizeCatalog(
   JSON.parse(readFileSync(join(repoRoot, "web/engines/catalog-v1.json"), "utf8")),
 );
-assert.equal(catalog.entries.length, 1, "development store publishes exactly one engine");
+assert.equal(catalog.entries.length, 2, "public alpha must expose two independently pinned GPL engines");
+assert.equal(catalog.entries[1].engineId, "brk-dev-fm");
+assert.notEqual(catalog.entries[0].packageSha256, catalog.entries[1].packageSha256, "FM must not alias the analog synth");
 
 const entry = catalog.entries[0];
 // Identity, not channel, is what keeps this engine distinct from production:
