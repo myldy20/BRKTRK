@@ -298,6 +298,52 @@
             }
             assert(resumed, "reopened project did not resume playback after full browser navigation");
             nextApp.stopPlayback();
+            // ENGINE REPLACEMENT: confirm the visible Sound selector works for
+            // an *existing* Instrument. The old renderer incorrectly retained
+            // stale descriptor controls after a successful package switch.
+            stage("ALPHA_REPLACE_ENGINE_" + width);
+            for (let attempt = 0; attempt < 100
+                 && nextApp.BRKTRKStores.transport.runtime.snapshot().phase !== "stopped"; attempt += 1) {
+              await wait(50);
+            }
+            assert(nextApp.BRKTRKStores.transport.runtime.snapshot().phase === "stopped",
+              "audio transport did not reach a safe stopped replacement boundary");
+            nextDoc.querySelector('[data-panel="sound"]').click();
+            nextApp.BRKTRKSoundEditRenderer.renderProductionSurface();
+            let changeButton = null;
+            for (let attempt = 0; attempt < 100; attempt += 1) {
+              changeButton = nextDoc.querySelector("#instrumentInspector .a4a-engine-change");
+              if (changeButton && nextDoc.body.dataset.productionSoundState === "ready") break;
+              await wait(50);
+            }
+            assert(changeButton, "loaded Instrument must expose Change Engine");
+            changeButton.click();
+            const selector = nextDoc.querySelector('#instrumentInspector select[aria-label="New engine for existing Instrument"]');
+            const fmChoiceIndex = nextApp.BRKTRKProductionEngineHost.catalogCandidates()
+              .findIndex(candidate => candidate.entry.engineId === "brk-dev-fm");
+            assert(selector && [...selector.options].some(option => option.value === String(fmChoiceIndex)),
+              "Change Engine must list the other compatible GPL engine");
+            selector.value = String(fmChoiceIndex);
+            selector.dispatchEvent(new nextApp.Event("change", { bubbles: true }));
+            const confirm = nextDoc.querySelector("#instrumentInspector .a4a-engine-replace-row button");
+            assert(confirm && !confirm.disabled, "engine replacement confirmation missing");
+            confirm.click();
+            assert(confirm.textContent === "CONFIRM RESET", "engine replacement must request explicit reset confirmation");
+            confirm.click();
+            for (let attempt = 0; attempt < 160
+              && restoredProject.instrumentPool[0]?.engineRef?.resolvedPackageSha256 !== fmEntry.packageSha256;
+              attempt += 1) {
+              await wait(50);
+            }
+            assert(restoredProject.instrumentPool[0]?.engineRef?.resolvedPackageSha256 === fmEntry.packageSha256,
+              "Change Engine did not apply a new hash-pinned DSP");
+            for (let attempt = 0; attempt < 100; attempt += 1) {
+              if (nextDoc.body.dataset.productionSoundEngine?.includes("/brk-dev-fm@")
+                  && nextDoc.body.dataset.productionSoundState === "ready") break;
+              await wait(50);
+            }
+            assert(nextDoc.body.dataset.productionSoundEngine?.includes("/brk-dev-fm@"),
+              "Sound editor retained stale prior-engine descriptors after successful swap");
             resolve();
           })().catch(reject).finally(() => clearTimeout(timer));
         }, { once: true });
