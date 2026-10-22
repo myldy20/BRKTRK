@@ -944,7 +944,10 @@
         }
         if (nextView.entry.packageSha256 !== entry.packageSha256) throw new Error("Verified engine identity changed");
         stores.project.replaceProductionInstrumentEngine(slot, buildCreationInput(nextView, slot), { source: "sound.engine.replace" });
-        rerender();
+        // Replacement invalidates *all* parameter descriptors, pages and presets.
+        // Rebuild from the newly pinned engine package, not the old closure's
+        // view (which otherwise keeps showing old controls until another action).
+        renderProductionSurface();
       } catch (error) {
         if (panel.isConnected) {
           status.textContent = `ENGINE NOT CHANGED · ${String(error?.message ?? error)}`;

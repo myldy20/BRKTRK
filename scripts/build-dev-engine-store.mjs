@@ -354,6 +354,97 @@ const catalog = {
 rmSync(OUTPUT_ROOT, { recursive: true, force: true });
 mkdirSync(dirname(join(OUTPUT_ROOT, packagePath)), { recursive: true });
 writeFileSync(join(OUTPUT_ROOT, packagePath), archive);
+// Public GPL alpha engine #2: 2-operator FM instead of BRK DEV POLY's
+// analog oscillator. All ABI/voice-management semantics are shared; the
+// oscillator is genuinely different. The original archive above is untouched
+// to preserve the exact SHA of projects already pinned to BRK DEV POLY.
+const FM_ID = "brk-dev-fm";
+const FM_NAME = "BRK DEV FM";
+const FM_MODES = ["FM 1:2", "FM 1:3", "FM 2:5", "FM 1:7"];
+function requiredReplace(source, from, to) {
+  if (!source.includes(from)) throw new Error("FM engine generator source drift: " + from.slice(0, 48));
+  return source.replace(from, to);
+}
+let fmJs = engineJs.toString("utf8");
+fmJs = requiredReplace(fmJs, 'const ENGINE_ID = "brk-dev-poly";', 'const ENGINE_ID = "brk-dev-fm";');
+fmJs = requiredReplace(fmJs, 'const DISPLAY_NAME = "BRK DEV POLY";', 'const DISPLAY_NAME = "BRK DEV FM";');
+fmJs = requiredReplace(fmJs, 'const SHAPE_LABELS = Object.freeze(["SAW", "SQUARE", "SINE", "NOISE"]);',
+  'const SHAPE_LABELS = Object.freeze(["FM 1:2", "FM 1:3", "FM 2:5", "FM 1:7"]);');
+fmJs = requiredReplace(fmJs, 'displayName: "SHAPE"', 'displayName: "MODE"');
+fmJs = requiredReplace(fmJs, '__BRK_DEV_POLY_DESCRIPTORS', '__BRK_DEV_FM_DESCRIPTORS');
+fmJs = requiredReplace(fmJs, '__BRK_DEV_POLY_SHAPES', '__BRK_DEV_FM_SHAPES');
+const oscillatorBegin = fmJs.indexOf("    oscillator() {");
+const oscillatorEnd = fmJs.indexOf("\n    envelopeStep() {", oscillatorBegin);
+if (oscillatorBegin < 0 || oscillatorEnd < 0) throw new Error("FM engine generator could not locate oscillator");
+const fmOscillator = [
+  "    oscillator() {",
+  "      const phase = this.phase * Math.PI * 2;",
+  "      const mode = shapeIndex(this.param(PARAM.SHAPE));",
+  "      // Genuine 2-operator FM; 2:5 is inharmonic, others use integer ratios.",
+  "      const ratio = [2, 3, 2.5, 7][mode];",
+  "      const index = [1.2, 2.7, 4.4, 6.2][mode];",
+  "      return Math.sin(phase + index * Math.sin(phase * ratio));",
+  "    }",
+  "",
+].join("\n");
+fmJs = fmJs.slice(0, oscillatorBegin) + fmOscillator + fmJs.slice(oscillatorEnd);
+const fmParameters = PARAMETERS.map(p => p.id === "shape"
+  ? { ...p, label: "MODE", values: FM_MODES } : { ...p });
+const names = ["INIT FM", "SUB FM", "FM PAD", "FM PLUCK", "METALLIC"];
+const fmPresets = PRESETS.map((p, i) => ({
+  ...p, name: names[i], values: { ...p.values, shape: [0, 0.33, 0.67, 0.33, 1][i] },
+}));
+const jsonBytes = value => encoder.encode(JSON.stringify(value, null, 2) + "\n");
+const fmArtifacts = [
+  ["LICENSE.txt", licenseBytes],
+  ["NOTICE.txt", noticeBytes],
+  ["runtime/brk-dev-fm.js", encoder.encode(fmJs)],
+  ["runtime/brk-dev-fm.wasm", WASM_PREAMBLE],
+  ["descriptors/parameters.json", jsonBytes({
+    schema: "brk-engine-parameters-v1", engineId: FM_ID,
+    parameterSchemaVersion: 1, parameters: fmParameters,
+  })],
+  ["descriptors/ui.json", jsonBytes({
+    schema: "brk-engine-ui-v1", engineId: FM_ID, title: FM_NAME,
+    pages: UI_PAGES, groupLabels: UI_GROUP_LABELS,
+  })],
+  ["presets/index.json", jsonBytes({
+    schema: "brk-preset-index-v1", moduleId: MODULE_ID, engineId: FM_ID,
+    stateSchemaVersion: 1, stateBytes: STATE_BYTES, presetCount: fmPresets.length,
+    presets: fmPresets.map(p => ({
+      id: p.id, name: p.name, bank: "Factory", origin: "engine",
+      readOnly: true, stateFile: p.id + ".state",
+      parameterSnapshot: Object.fromEntries(fmParameters.map(param => [param.id, p.values[param.id]])),
+    })),
+  })],
+  ...fmPresets.map(p => ["presets/" + p.id + ".state", presetState(p.values)]),
+];
+const fmArtifactRecords = fmArtifacts.map(([path, bytes]) => ({
+  path, size: bytes.byteLength, sha256: sha256(bytes),
+}));
+const fmContentHash = sha256(encoder.encode(fmArtifactRecords.slice()
+  .sort((l, r) => l.path < r.path ? -1 : l.path > r.path ? 1 : 0)
+  .map(a => a.path + "\u0000" + a.size + "\u0000" + a.sha256 + "\n").join("")));
+const fmManifest = {
+  ...manifest, engineId: FM_ID, displayName: FM_NAME, contentSha256: fmContentHash,
+  runtime: { ...manifest.runtime, directJs: "runtime/brk-dev-fm.js", directWasm: "runtime/brk-dev-fm.wasm" },
+  artifacts: fmArtifactRecords, parameters: fmParameters,
+};
+const fmTar = buildTar([["brk-package.json", jsonBytes(fmManifest)], ...fmArtifacts]
+  .map(([path, bytes]) => [FM_ID + "-" + VERSION + "/" + path, bytes]));
+const fmArchive = new Uint8Array(gzipSync(fmTar, { level: 9, mtime: 0 }));
+const fmArchivePath = "packages/" + MODULE_ID + "/" + FM_ID + "/" + VERSION + ".tar.gz";
+mkdirSync(dirname(join(OUTPUT_ROOT, fmArchivePath)), { recursive: true });
+writeFileSync(join(OUTPUT_ROOT, fmArchivePath), fmArchive);
+catalog.entries.push({
+  moduleId: MODULE_ID, engineId: FM_ID, version: VERSION, channel: CHANNEL,
+  status: "active", displayName: FM_NAME,
+  abiVersion: ABI_VERSION, hostContract: HOST_CONTRACT,
+  packageUrl: "./" + fmArchivePath,
+  packageSha256: sha256(fmArchive), packageBytes: fmArchive.byteLength,
+  contentSha256: fmContentHash, stateSchemaVersion: 1, parameterSchemaVersion: 1,
+});
+
 writeFileSync(join(OUTPUT_ROOT, "catalog-v1.json"), `${JSON.stringify(catalog, null, 2)}\n`);
 
 console.log(`Development engine store built: ${OUTPUT_ROOT}/catalog-v1.json`);
