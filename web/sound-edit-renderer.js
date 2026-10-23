@@ -883,7 +883,9 @@
     const confirm = document.createElement("button");
     confirm.type = "button";
     confirm.textContent = "REPLACE ENGINE";
-    confirm.disabled = !choices.some(choice => choice.index !== currentChoice?.index);
+    // Current is selected initially. Explicitly choosing a different engine
+    // is required before allowing any destructive confirmation.
+    confirm.disabled = currentChoice != null || choices.length === 0;
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.textContent = "CANCEL";
