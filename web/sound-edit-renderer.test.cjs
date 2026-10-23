@@ -114,6 +114,10 @@ const rendererSource = fs.readFileSync(path.join(__dirname, "sound-edit-renderer
   }).catch((error) => { console.error(error); process.exitCode = 1; });
 }
 assert.match(rendererSource, /BRKTRKProductionEngineHost\.catalogCandidates\(\)/, "Create picker must consume all trusted compatibility candidates");
+assert.match(rendererSource, /choice\.label \+ " · CURRENT"/,
+  "replacement selector must show the current engine for transparency");
+assert.match(rendererSource, /confirm\.disabled = !selectedCatalogCandidate/,
+  "replacement must not allow a destructive same-engine no-op");
 assert.match(rendererSource, /option\.disabled = entry\.disabled/, "Create picker must disable incompatible options");
 assert.match(rendererSource, /BRKTRKSampleAssetSurface\?\.renderPanel/, "verified sampler Sound must render the separate asset surface without inventing a DSP parameter");
 
