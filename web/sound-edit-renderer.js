@@ -1482,12 +1482,9 @@
       }) ?? null;
     }
     renderProductionSurface();
-    // Warm the default published engine without creating project data or
-    // resuming browser audio. Existing Instruments keep their exact packages.
-    ensureCatalog().then((candidates) => {
-      const choice = catalogEngineChoices(candidates).find((entry) => entry.compatible);
-      return prefetchCatalogEngine(choice ? candidates[choice.index] : null);
-    }).catch((error) => console.warn("Default engine preload failed", error));
+    // Fetch only the lightweight catalog on first run. Loading executable
+    // packages is deferred until an Instrument is used or a user selects it.
+    ensureCatalog().catch((error) => console.warn("Engine catalog unavailable", error));
     return true;
   }
 
