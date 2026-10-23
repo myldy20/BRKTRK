@@ -865,22 +865,27 @@
     const select = document.createElement("select");
     select.setAttribute("aria-label", "New engine for existing Instrument");
     const candidates = host.catalogCandidates();
-    const choices = catalogEngineChoices(candidates).filter(choice => {
-      if (!choice.compatible) return false;
-      const next = candidates[choice.index]?.entry;
-      return next?.packageSha256 !== originalView.entry.packageSha256;
-    });
+    const choices = catalogEngineChoices(candidates).filter(choice => choice.compatible);
+    // Show ALL available engines. The current engine stays visible and
+    // selected, so a two-engine catalog doesn't look like a broken one-item
+    // picker. It must never become a destructive no-op replacement target.
+    const currentChoice = choices.find(choice =>
+      candidates[choice.index]?.entry?.packageSha256 === originalView.entry.packageSha256);
     for (const choice of choices) {
       const option = document.createElement("option");
       option.value = String(choice.index);
-      option.textContent = choice.label;
+      const active = candidates[choice.index]?.entry?.packageSha256 === originalView.entry.packageSha256;
+      option.textContent = active ? choice.label + " · CURRENT" : choice.label;
       option.dataset.engineVersion = choice.version;
+      option.selected = active;
       select.append(option);
     }
     const confirm = document.createElement("button");
     confirm.type = "button";
     confirm.textContent = "REPLACE ENGINE";
-    confirm.disabled = choices.length === 0;
+    // Current is selected initially. Explicitly choosing a different engine
+    // is required before allowing any destructive confirmation.
+    confirm.disabled = currentChoice != null || choices.length === 0;
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.textContent = "CANCEL";
@@ -888,21 +893,28 @@
     status.className = "a4a-engine-replace-status";
     status.setAttribute("role", "status");
     status.setAttribute("aria-live", "polite");
-    status.textContent = choices.length
-      ? "STOP playback before replacing the engine"
-      : "NO OTHER COMPATIBLE ENGINES";
+    status.textContent = choices.length > 1
+      ? "Select another engine · STOP playback before replacing"
+      : "ONLY THIS ENGINE AVAILABLE";
     let armedIndex = null, busy = false;
     function resetConfirmation() {
       armedIndex = null;
       confirm.textContent = "REPLACE ENGINE";
       panel.dataset.engineReplaceArmed = "false";
     }
-    select.addEventListener("change", resetConfirmation);
+    select.addEventListener("change", () => {
+      resetConfirmation();
+      confirm.disabled = !selectedCatalogCandidate(candidates, select.value)
+        || candidates[Number(select.value)]?.entry?.packageSha256 === originalView.entry.packageSha256;
+    });
     cancel.addEventListener("click", () => { if (!busy) panel.remove(); });
     confirm.addEventListener("click", async () => {
       if (busy) return;
       const candidate = selectedCatalogCandidate(candidates, select.value);
-      if (!candidate || candidate.entry.packageSha256 === originalView.entry.packageSha256) return;
+      if (!candidate || candidate.entry.packageSha256 === originalView.entry.packageSha256) {
+        status.textContent = "Select a different engine to replace this Instrument";
+        return;
+      }
       if (!transportStoppedForEngineSwap()) {
         resetConfirmation();
         status.textContent = "STOP playback to change the engine";
@@ -963,6 +975,7 @@
         }
       }
     });
+    if (!currentChoice && choices.length) select.selectedIndex = -1;
     row.append(select, confirm, cancel);
     panel.append(title, warning, row, status);
     return panel;
@@ -1471,12 +1484,9 @@
       }) ?? null;
     }
     renderProductionSurface();
-    // Warm the default published engine without creating project data or
-    // resuming browser audio. Existing Instruments keep their exact packages.
-    ensureCatalog().then((candidates) => {
-      const choice = catalogEngineChoices(candidates).find((entry) => entry.compatible);
-      return prefetchCatalogEngine(choice ? candidates[choice.index] : null);
-    }).catch((error) => console.warn("Default engine preload failed", error));
+    // Fetch only the lightweight catalog on first run. Loading executable
+    // packages is deferred until an Instrument is used or a user selects it.
+    ensureCatalog().catch((error) => console.warn("Engine catalog unavailable", error));
     return true;
   }
 

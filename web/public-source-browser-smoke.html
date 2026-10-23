@@ -323,6 +323,11 @@
               .findIndex(candidate => candidate.entry.engineId === "brk-dev-fm");
             assert(selector && [...selector.options].some(option => option.value === String(fmChoiceIndex)),
               "Change Engine must list the other compatible GPL engine");
+            const currentChoice = [...selector.options].find(option =>
+              option.textContent.includes("CURRENT"));
+            assert(currentChoice && currentChoice.selected && nextDoc.querySelector("#instrumentInspector .a4a-engine-replace-row button").disabled,
+              "replacement dialog must visibly identify the current engine and prevent same-engine replacement");
+            assert(selector.options.length === 2, "two-engine alpha must list both engines, including CURRENT");
             selector.value = String(fmChoiceIndex);
             selector.dispatchEvent(new nextApp.Event("change", { bubbles: true }));
             const confirm = nextDoc.querySelector("#instrumentInspector .a4a-engine-replace-row button");

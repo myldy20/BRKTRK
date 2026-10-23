@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Build the local development engine store into web/engines/.
 //
-// The production engine store lives outside this repository, so a developer
-// machine has no engine at all: the Sound workspace can only render
+// The BRKTRK repository owns its public GPL engines and package catalog.
+// Without locally building the engine store, a developer checkout has no engine: the Sound workspace can only render
 // "ENGINE CATALOG UNAVAILABLE · engine catalog fetch failed with HTTP 404" and
 // no sound path is reachable. This script packages engines/brk-dev-poly into a
 // real `brk-engine-catalog-v1` store so the Sound, Instrument lifecycle, preset
@@ -361,33 +361,10 @@ writeFileSync(join(OUTPUT_ROOT, packagePath), archive);
 const FM_ID = "brk-dev-fm";
 const FM_NAME = "BRK DEV FM";
 const FM_MODES = ["FM 1:2", "FM 1:3", "FM 2:5", "FM 1:7"];
-function requiredReplace(source, from, to) {
-  if (!source.includes(from)) throw new Error("FM engine generator source drift: " + from.slice(0, 48));
-  return source.replace(from, to);
-}
-let fmJs = engineJs.toString("utf8");
-fmJs = requiredReplace(fmJs, 'const ENGINE_ID = "brk-dev-poly";', 'const ENGINE_ID = "brk-dev-fm";');
-fmJs = requiredReplace(fmJs, 'const DISPLAY_NAME = "BRK DEV POLY";', 'const DISPLAY_NAME = "BRK DEV FM";');
-fmJs = requiredReplace(fmJs, 'const SHAPE_LABELS = Object.freeze(["SAW", "SQUARE", "SINE", "NOISE"]);',
-  'const SHAPE_LABELS = Object.freeze(["FM 1:2", "FM 1:3", "FM 2:5", "FM 1:7"]);');
-fmJs = requiredReplace(fmJs, 'displayName: "SHAPE"', 'displayName: "MODE"');
-fmJs = requiredReplace(fmJs, '__BRK_DEV_POLY_DESCRIPTORS', '__BRK_DEV_FM_DESCRIPTORS');
-fmJs = requiredReplace(fmJs, '__BRK_DEV_POLY_SHAPES', '__BRK_DEV_FM_SHAPES');
-const oscillatorBegin = fmJs.indexOf("    oscillator() {");
-const oscillatorEnd = fmJs.indexOf("\n    envelopeStep() {", oscillatorBegin);
-if (oscillatorBegin < 0 || oscillatorEnd < 0) throw new Error("FM engine generator could not locate oscillator");
-const fmOscillator = [
-  "    oscillator() {",
-  "      const phase = this.phase * Math.PI * 2;",
-  "      const mode = shapeIndex(this.param(PARAM.SHAPE));",
-  "      // Genuine 2-operator FM; 2:5 is inharmonic, others use integer ratios.",
-  "      const ratio = [2, 3, 2.5, 7][mode];",
-  "      const index = [1.2, 2.7, 4.4, 6.2][mode];",
-  "      return Math.sin(phase + index * Math.sin(phase * ratio));",
-  "    }",
-  "",
-].join("\n");
-fmJs = fmJs.slice(0, oscillatorBegin) + fmOscillator + fmJs.slice(oscillatorEnd);
+// Source is maintained as its own DSP module under engines/brk-dev-fm.
+// This is intentionally loaded as-is to keep previously published FM package
+// bytes and their saved SHA-256 pins exactly reproducible.
+const fmJs = readFileSync("engines/brk-dev-fm/runtime/brk-dev-fm.js", "utf8");
 const fmParameters = PARAMETERS.map(p => p.id === "shape"
   ? { ...p, label: "MODE", values: FM_MODES } : { ...p });
 const names = ["INIT FM", "SUB FM", "FM PAD", "FM PLUCK", "METALLIC"];
