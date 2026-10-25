@@ -1,0 +1,155 @@
+{
+  "schema": "brk-sound-ui-profile-v1",
+  "moduleId": "design.myldy.brk-modal",
+  "engineId": "brk-modal",
+  "title": "BRK Modal",
+  "hostOwned": true,
+  "engineExecutableUi": false,
+  "descriptorDriven": true,
+  "requiredAbiVersion": 65536,
+  "requiredStateSchemaVersion": 65536,
+  "requiredOutputChannels": 2,
+  "parameterCount": 89,
+  "presetIndexSchema": "brk-preset-index-v1",
+  "interaction": {
+    "continuous": { "policy": "parameter-ramp", "defaultSmoothingMs": 8 },
+    "discrete": { "policy": "parameter-value", "defaultSmoothingMs": 0 },
+    "requiresReconfigure": { "policy": "stopped-state-edit", "liveStructuralWrites": false },
+    "hiddenParameters": "advanced-only",
+    "readOnlyParameters": "display-only"
+  },
+  "quality": {
+    "runtimeOwned": true,
+    "serializedInStateV1": false,
+    "defaultAutoRange": ["full", "balanced"],
+    "modes": [
+      { "id": "auto", "label": "Auto", "description": "Model-aware Full/Balanced policy with deadline hysteresis." },
+      { "id": "full", "label": "Full", "description": "Complete authored modal and polyphony budget." },
+      { "id": "balanced", "label": "Balanced", "description": "Model-aware reduced work with dense-spectrum protection." },
+      { "id": "economy", "label": "Economy", "description": "Explicit lower-detail mode; audible simplification is possible." },
+      { "id": "draft", "label": "Draft", "description": "Lowest-cost preview mode; forces a smaller runtime budget." }
+    ],
+    "targetDefaults": { "browser": "auto", "desktop": "auto", "mobile": "auto", "trimui": null },
+    "targetValidation": { "trimui": "pending-physical-benchmark" }
+  },
+  "presetBanks": [
+    { "id": "Reference", "label": "Reference", "origin": "upstream", "readOnly": true, "attributionRequired": true },
+    { "id": "Stable", "label": "Stable", "origin": "brk", "readOnly": true, "attributionRequired": false },
+    { "id": "Wild", "label": "Wild", "origin": "brk", "readOnly": true, "attributionRequired": false }
+  ],
+  "groupLabels": {
+    "coupling": "Coupling",
+    "output": "Output",
+    "lifecycle": "Lifecycle",
+    "resonator_a": "Resonator A",
+    "resonator_a_velocity": "Resonator A Velocity",
+    "resonator_b": "Resonator B",
+    "resonator_b_velocity": "Resonator B Velocity",
+    "mallet": "Mallet",
+    "mallet_velocity": "Mallet Velocity",
+    "noise": "Noise",
+    "noise_envelope": "Noise Envelope",
+    "noise_velocity": "Noise Velocity",
+    "velocity_macro": "Velocity"
+  },
+  "enumLabels": {
+    "couple": ["A+B", "A>B"],
+    "brk.coupling_profile": ["Stable", "Reference", "Wild"],
+    "brk.release_mode": ["Damped", "Natural", "One Shot"],
+    "brk.stereo_mode": ["Mono", "Comb", "Voice Spread"],
+    "a_on": ["Off", "On"],
+    "a_model": ["String", "Beam", "Squared", "Membrane", "Plate", "Drumhead", "Marimba", "Open Tube", "Closed Tube", "Marimba2", "Bell", "Djembe"],
+    "a_partials": ["4", "8", "16", "32", "64", "1", "2"],
+    "b_on": ["Off", "On"],
+    "b_model": ["String", "Beam", "Squared", "Membrane", "Plate", "Drumhead", "Marimba", "Open Tube", "Closed Tube", "Marimba2", "Bell", "Djembe"],
+    "b_partials": ["4", "8", "16", "32", "64", "1", "2"],
+    "brk.noise_engine": ["BRK Burst", "RipplerX ADSR"],
+    "noise_filter_mode": ["LP", "BP", "HP"]
+  },
+  "plainEnumValues": {
+    "a_partials": [4, 8, 16, 32, 64, 1, 2],
+    "b_partials": [4, 8, 16, 32, 64, 1, 2]
+  },
+  "plainSkewByKey": {
+    "ab_split": 0.5,
+    "a_decay": 0.2,
+    "a_inharm": 0.3,
+    "a_ratio": 0.3,
+    "b_decay": 0.2,
+    "b_inharm": 0.3,
+    "b_ratio": 0.3,
+    "mallet_stiff": 0.3,
+    "noise_mix": 0.3,
+    "noise_res": 0.3,
+    "noise_filter_freq": 0.3,
+    "noise_att": 0.3,
+    "noise_dec": 0.3,
+    "noise_rel": 0.3
+  },
+  "smoothingMsByKey": {
+    "a_decay": 12,
+    "b_decay": 12,
+    "noise_filter_freq": 12,
+    "noise_att": 12,
+    "noise_dec": 12,
+    "noise_rel": 12,
+    "brk.output_gain_db": 8
+  },
+  "pages": [
+    {
+      "id": "main",
+      "label": "Main",
+      "mode": "curated",
+      "controls": [
+        "brk.coupling_profile", "couple", "ab_mix",
+        "a_model", "a_decay", "a_damp", "a_tone", "a_hit",
+        "b_on", "b_model", "b_decay", "b_damp", "b_tone",
+        "mallet_mix", "mallet_res", "noise_mix", "noise_res",
+        "brk.velocity.response", "brk.output_gain_db"
+      ]
+    },
+    {
+      "id": "resonators",
+      "label": "Resonators",
+      "mode": "curated",
+      "controls": [
+        "a_on", "a_model", "a_partials", "a_decay", "a_damp", "a_tone", "a_hit", "a_rel", "a_inharm", "a_ratio", "a_cut", "a_radius", "a_coarse", "a_fine", "brk.a_spectral_focus",
+        "b_on", "b_model", "b_partials", "b_decay", "b_damp", "b_tone", "b_hit", "b_rel", "b_inharm", "b_ratio", "b_cut", "b_radius", "b_coarse", "b_fine", "brk.b_spectral_focus"
+      ]
+    },
+    {
+      "id": "exciter",
+      "label": "Exciter",
+      "mode": "curated",
+      "controls": [
+        "mallet_mix", "mallet_res", "mallet_stiff", "mallet_ktrack",
+        "noise_mix", "noise_res", "brk.noise_color", "noise_filter_mode", "noise_filter_freq", "noise_filter_q",
+        "noise_att", "noise_dec", "noise_sus", "noise_rel", "noise_att_ten", "noise_dec_ten", "noise_rel_ten"
+      ]
+    },
+    {
+      "id": "velocity",
+      "label": "Velocity",
+      "mode": "curated",
+      "controls": [
+        "brk.velocity.response", "brk.velocity.curve", "brk.velocity.mallet_hardness_octaves", "brk.velocity.noise_color",
+        "brk.velocity.decay_octaves", "brk.velocity.material", "brk.velocity.tone", "brk.velocity.inharmonicity",
+        "vel_a_decay", "vel_a_hit", "vel_a_inharm", "vel_a_damp", "vel_a_tone",
+        "vel_b_decay", "vel_b_hit", "vel_b_inharm", "vel_b_damp", "vel_b_tone",
+        "vel_mallet_mix", "vel_mallet_res", "vel_mallet_stiff",
+        "vel_noise_mix", "vel_noise_res", "vel_noise_freq", "vel_noise_q", "vel_noise_att", "vel_noise_dec", "vel_noise_sus", "vel_noise_rel"
+      ]
+    },
+    {
+      "id": "output",
+      "label": "Output",
+      "mode": "curated",
+      "controls": [
+        "gain", "brk.output_gain_db", "brk.stereo_mode", "brk.stereo_width",
+        "brk.release_mode", "brk.retrigger_declick_ms", "brk.polyphony",
+        "ab_split", "brk.max_coupling_detune_cents"
+      ]
+    },
+    { "id": "advanced", "label": "Advanced", "mode": "all" }
+  ]
+}

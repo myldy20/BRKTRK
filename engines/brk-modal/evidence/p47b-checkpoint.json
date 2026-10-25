@@ -1,0 +1,24 @@
+{
+  "schema": "brk-modal-p47b-checkpoint-v1",
+  "status": "complete-guarded-candidate-scalar-default",
+  "implementationCommit": "5c4fc06842eac2939e33b13fc5ad129730ae36bc",
+  "compatibilityCommit": "8964e6bc3e07e2a8e8eb2c4951747d337eaff6d0",
+  "documentationCommit": "5e3391acf5deab7b2334f4bb2d2f597bcc94c205",
+  "evidenceRunId": 30918879821,
+  "fullRegressionRunId": 30918879717,
+  "noiseRegressionRunId": 30918879716,
+  "artifact": {
+    "name": "brk-modal-p47b-x86-vector-evidence",
+    "id": 8896215814,
+    "digest": "sha256:0e28bd3335a20cb4113d0ee02637750a568235e05730af737fb8b27d39d71680"
+  },
+  "invariants": {
+    "abi": "1.0",
+    "parameterCount": 89,
+    "stateBytes": 768,
+    "defaultKernel": "scalar",
+    "modeReductionUsed": false,
+    "realtimeAllocationContractChanged": false
+  },
+  "nextMilestone": "p47c-conservative-silent-tail-optimization"
+}

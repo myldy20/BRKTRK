@@ -1,0 +1,10 @@
+<PARAMETERS>
+  <PARAM id="a_model" value="0.0"/>
+  <PARAM id="a_on" value="1.0"/>
+  <PARAM id="a_partials" value="3.0"/>
+  <PARAM id="a_decay" value="4.920000076293945"/>
+  <PARAM id="a_hit" value="0.1299999952316284"/>
+  <PARAM id="a_rel" value="0.5199999809265137"/>
+  <PARAM id="gain" value="6.239999771118164"/>
+  <PARAM id="vel_mallet_res" value="1.0"/>
+</PARAMETERS>
