@@ -1,0 +1,35 @@
+schema: brk-engine-provenance-v1
+engineId: brk-modal
+moduleId: design.myldy.brk-modal
+license: GPL-3.0-only
+modifiedWork: true
+upstream:
+  project: RipplerX
+  version: 1.5.18
+  repository: tiagolr/ripplerx
+  commit: e9f6537e5e3d6c648b2463e6a90f15e5f612bb75
+  author: Tiago Rodrigues / tiagolr
+  license: GPL-3.0
+preservedOrAdapted:
+  - physical/modal model equations and model families
+  - Reference sound-path behavior and model ratios
+  - converted factory-program data
+  - upstream-compatible limiter/noise behavior where documented
+downstream:
+  vendor: Myldy design / Ilya Tolstoukhov
+  year: 2026
+  modifications:
+    - dependency-free C++17 BRK runtime
+    - Stable and Wild sound paths
+    - BRK Synth ABI/state/parameter adaptation
+    - deterministic excitation path
+    - scalable quality profiles and Auto policy
+    - browser/WASM/AudioWorklet host integration
+    - conformance, fuzzing and quality hardening
+sourceObligations:
+  includeGplV3Text: true
+  includeCompleteCorrespondingSource: true
+  includeBuildScripts: true
+  preserveUpstreamAttribution: true
+  identifyModifiedWork: true
+canonicalHumanRecord: PROVENANCE.md

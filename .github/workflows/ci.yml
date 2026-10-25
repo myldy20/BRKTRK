@@ -27,6 +27,15 @@ jobs:
           node-version: '22'
       - name: Source and deterministic regressions
         run: npm test
+      - name: Build and test migrated GPL BRK Modal native DSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S engines/brk-modal -B /tmp/brktrk-modal-build -DCMAKE_BUILD_TYPE=Release -DBRK_MODAL_ENABLE_VECTOR=OFF
+          cmake --build /tmp/brktrk-modal-build --target brk_modal_tests brk_modal_state_v1_tests brk_modal_parameter_descriptor_tests --parallel 2
+          /tmp/brktrk-modal-build/brk_modal_tests
+          /tmp/brktrk-modal-build/brk_modal_state_v1_tests
+          /tmp/brktrk-modal-build/brk_modal_parameter_descriptor_tests
       - name: Build local developer engine
         run: npm run dev:engine
       - name: Build compact public web app

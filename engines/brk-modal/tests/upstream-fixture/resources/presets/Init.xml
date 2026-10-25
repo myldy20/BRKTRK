@@ -1,0 +1,9 @@
+<PARAMETERS>
+  <PARAM id="a_model" value="0.0"/>
+  <PARAM id="a_on" value="1.0"/>
+  <PARAM id="a_partials" value="3.0"/>
+  <PARAM id="a_decay" value="0.9999999403953552"/>
+  <PARAM id="a_cut" value="20.0"/>
+  <PARAM id="mallet_res" value="0.7999999523162842"/>
+  <PARAM id="couple" value="0.0"/>
+</PARAMETERS>
