@@ -33,12 +33,9 @@ jobs:
           set -euo pipefail
           cmake -S engines/brk-modal -B /tmp/brktrk-modal-build -DCMAKE_BUILD_TYPE=Release -DBRK_MODAL_ENABLE_VECTOR=OFF
           cmake --build /tmp/brktrk-modal-build --target brk_modal_tests brk_modal_state_v1_tests brk_modal_parameter_descriptor_tests --parallel 2
-          ctest --test-dir /tmp/brktrk-modal-build --output-on-failure --timeout 60 -R '^(brk_modal_tests|brk_modal_state_v1_tests|brk_modal_parameter_descriptor_tests)
-      - name: Build compact public web app
-        run: npm run build:web
-      - name: Chromium first-run against compact build
-        run: BRKTRK_WEB_DIR=dist npm run test:browser
-
+          /tmp/brktrk-modal-build/brk_modal_tests
+          /tmp/brktrk-modal-build/brk_modal_state_v1_tests
+          /tmp/brktrk-modal-build/brk_modal_parameter_descriptor_tests
       - name: Build local developer engine
         run: npm run dev:engine
       - name: Build compact public web app
