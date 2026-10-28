@@ -9,7 +9,8 @@
     "dev:engine": "node scripts/build-dev-engine-store.mjs",
     "serve": "python3 -m http.server 8080 --directory web",
     "test:browser": "bash scripts/public-browser-smoke.sh",
-    "build:web": "node scripts/build-web.mjs"
+    "build:web": "node scripts/build-web.mjs",
+    "build:modal-wasm": "bash scripts/build-modal-wasm.sh"
   },
   "engines": {
     "node": ">=22"

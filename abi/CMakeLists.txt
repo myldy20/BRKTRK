@@ -13,6 +13,9 @@ set(BRK_MODAL_MODULE_SOURCES
     ${BRK_MODAL_ENGINE_SOURCES}
 )
 
+option(BRK_MODAL_BUILD_LEGACY_WORKLET
+    "Build the original private host's AudioWorklet bundles (requires host/browser sources)" OFF)
+
 if(EMSCRIPTEN)
     set(BRK_MODAL_WASM_EXPORTS
         "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAPF32']"
@@ -42,6 +45,11 @@ if(EMSCRIPTEN)
         SUFFIX ".js"
     )
 
+    # The independent BRKTRK ABI factory above produces direct JS + WASM
+    # for the public host. The legacy private-host worklet generator below
+    # imports host/browser/build_worklet_post.py, which does not belong to
+    # the GPL BRKTRK source tree. Keep it optional and disabled by default.
+    if(BRK_MODAL_BUILD_LEGACY_WORKLET)
     # P5B+: directly loadable AudioWorklet modules. Emscripten inserts --post-js
     # inside its wrapper, so generate plain JS from the canonical browser host
     # sources instead of duplicating host logic. Wasm is embedded and
@@ -122,6 +130,7 @@ if(EMSCRIPTEN)
         OUTPUT_NAME "brk_modal_worklet_module_simd"
         SUFFIX ".mjs"
     )
+    endif() # BRK_MODAL_BUILD_LEGACY_WORKLET
 else()
     add_executable(brk_abi_c_test tests/test_abi_c.c)
     target_include_directories(brk_abi_c_test PRIVATE include)
