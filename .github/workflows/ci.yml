@@ -36,6 +36,18 @@ jobs:
           /tmp/brktrk-modal-build/brk_modal_tests
           /tmp/brktrk-modal-build/brk_modal_state_v1_tests
           /tmp/brktrk-modal-build/brk_modal_parameter_descriptor_tests
+      - name: Build and test GPL BRK Modal ABI adapter (native)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S abi -B /tmp/brktrk-modal-abi -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/brktrk-modal-abi --parallel 2 --target brk_abi_c_test brk_abi_layout_test brk_module_runtime_test brk_native_event_executor_test brk_runtime_policy_extension_test brk_persistent_event_executor_properties_test
+          /tmp/brktrk-modal-abi/brk_abi_c_test
+          /tmp/brktrk-modal-abi/brk_abi_layout_test
+          /tmp/brktrk-modal-abi/brk_module_runtime_test
+          /tmp/brktrk-modal-abi/brk_native_event_executor_test
+          /tmp/brktrk-modal-abi/brk_runtime_policy_extension_test
+          /tmp/brktrk-modal-abi/brk_persistent_event_executor_properties_test
       - name: Build local developer engine
         run: npm run dev:engine
       - name: Build compact public web app
