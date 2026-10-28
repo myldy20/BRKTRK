@@ -48,6 +48,14 @@ jobs:
           /tmp/brktrk-modal-abi/brk_native_event_executor_test
           /tmp/brktrk-modal-abi/brk_runtime_policy_extension_test
           /tmp/brktrk-modal-abi/brk_persistent_event_executor_properties_test
+      - name: Verify standalone Modal WASM CMake configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/build-modal-wasm.sh
+          # Configure-only: runner has no Emscripten SDK. This rejects a
+          # hidden dependency on the private host's Worklet generator.
+          cmake -S abi -B /tmp/brktrk-modal-wasm-config -DEMSCRIPTEN=ON -DBRK_MODAL_BUILD_LEGACY_WORKLET=OFF
       - name: Build local developer engine
         run: npm run dev:engine
       - name: Build compact public web app

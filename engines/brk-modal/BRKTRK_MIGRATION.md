@@ -50,3 +50,18 @@ immutable Modal archive with complete GPL corresponding source, provenance,
 factory presets and browser conformance. Only add the exact tested SHA to the
 public catalog after explicit package-level clearance. Never substitute for
 or silently overwrite old package identities pinned in saved projects.
+
+## Browser factory build preparation
+
+The standalone `brk_modal_wasm` CMake target is now decoupled from the
+former private-host `host/browser/build_worklet_post.py` generator. Legacy
+worklet targets are opt-in via `-DBRK_MODAL_BUILD_LEGACY_WORKLET=ON` and
+are **not** needed by the BRKTRK generic AudioWorklet Host.
+
+With Emscripten **4.0.23** active, run `npm run build:modal-wasm` to compile
+the standalone `build/brk-modal-wasm/brk_modal_module.js` factory and its
+`.wasm` binary; both outputs are gitignored. Public CI performs a
+configure-only check of this path without pulling the heavy SDK on every PR.
+A real Emscripten build, JS/WASM runtime playback, immutable package
+verification and release gate remain outstanding. This tool **does not**
+change the production catalog or publish binaries.

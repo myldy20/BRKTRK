@@ -32,3 +32,6 @@ tmp/
 # Local editor state
 .vscode/
 .idea/
+
+# Local CMake/Emscripten outputs; never commit generated WASM binaries
+build/
