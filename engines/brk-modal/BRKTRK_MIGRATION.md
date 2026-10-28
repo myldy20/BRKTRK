@@ -28,10 +28,25 @@ verification remain required.
 - Existing BRK DEV POLY/FM runtime packages and catalog remain untouched.
 - No new runtime downloads, browser boot changes or AudioWorklet changes.
 
+## Native ABI integration milestone
+
+- Imported the **29** files under `abi/` from the same private pinned commit,
+  with exact 29/29 Git blob-SHA identity across repositories.
+- The frozen `abi/include/brk_synth_abi.h`, `abi/native/brk_modal_module.cpp`,
+  realtime event executor, runtime-policy bridge, tests and TypeScript ABI
+  declarations now live alongside Modal's 80 DSP source files in BRKTRK.
+- The existing Public CI builds six native adapter/ABI conformance targets:
+  C ABI, structure layout, module runtime, event executor, runtime policy and
+  persistent ramp/event semantics.
+- The native ABI import must not change any existing browser engine package,
+  instrument identity, project file or Pages startup path.
+
 ## Next integration dependency
 
-Bring the BRK Synth ABI header/module adapter and WASM packaging inputs into
-BRKTRK, build and test a **new versioned** immutable Modal package, verify
-complete GPL corresponding source/presets and browser conformance, then add
-its exact SHA to the public catalog. Existing projects pinned to older binary
-identities must retain exact-package resolution, without silent migration.
+The native adapter is not yet a working browser synth. Next: provision a
+pinned Emscripten toolchain in isolated CI, migrate only the necessary
+AudioWorklet/package builder dependencies, then generate a **new versioned**
+immutable Modal archive with complete GPL corresponding source, provenance,
+factory presets and browser conformance. Only add the exact tested SHA to the
+public catalog after explicit package-level clearance. Never substitute for
+or silently overwrite old package identities pinned in saved projects.
