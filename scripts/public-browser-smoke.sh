@@ -45,16 +45,31 @@ done
 [[ "$port" =~ ^[0-9]+$ ]] || { echo "Public smoke server port unavailable" >&2; exit 1; }
 
 for width in 1210 390; do
-  profile="$tmp/chrome-$width"
-  set +e
-  output="$(node scripts/run-browser-cdp-fixture.mjs \
-    "http://127.0.0.1:$port/public-source-browser-smoke.html?width=$width" \
-    "$profile" "$tmp/chrome-$width.stderr")"
-  result=$?
-  set -e
-  echo "PUBLIC BROWSER $width: $output"
+  output=""
+  result=1
+  # Retry only Chrome's infrastructure boot failure. Fixture assertions, audio
+  # failures and any other error fail immediately and are never retried.
+  for attempt in 1 2; do
+    profile="$tmp/chrome-$width-$attempt"
+    stderr="$tmp/chrome-$width-$attempt.stderr"
+    set +e
+    output="$(BRKTRK_CDP_DISCOVERY_ATTEMPTS="${BRKTRK_CDP_DISCOVERY_ATTEMPTS:-250}" \
+      node scripts/run-browser-cdp-fixture.mjs \
+      "http://127.0.0.1:$port/public-source-browser-smoke.html?width=$width" \
+      "$profile" "$stderr")"
+    result=$?
+    set -e
+    echo "PUBLIC BROWSER $width (attempt $attempt): $output"
+    if [[ "$result" -eq 0 && "$output" == "BRKTRK_BROWSER_TESTS_PASSED" ]]; then break; fi
+    if [[ "$attempt" -ge 2 || ( "$output" != *"DevToolsActivePort"* \
+          && "$output" != *"Chrome exited before the DevTools endpoint"* ) ]]; then
+      break
+    fi
+    echo "Chrome DevTools startup failed; retrying isolated profile once" >&2
+    tail -n 12 "$stderr" >&2 || true
+  done
   if [[ "$result" -ne 0 || "$output" != "BRKTRK_BROWSER_TESTS_PASSED" ]]; then
-    tail -n 24 "$tmp/chrome-$width.stderr" >&2 || true
+    tail -n 24 "$stderr" >&2 || true
     echo "Public browser smoke failed at width $width" >&2
     exit 1
   fi
