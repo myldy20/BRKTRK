@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      qualify_modal_wasm:
+        description: 'Run the pinned Modal JS/WASM vs native audio qualification'
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
@@ -62,3 +68,49 @@ jobs:
         run: npm run build:web
       - name: Chromium first-run against compact build
         run: BRKTRK_WEB_DIR=dist npm run test:browser
+
+  modal_wasm:
+    # Keep ordinary PRs fast. Relevant Modal/ABI PRs and an explicit manual
+    # dispatch qualify the true Emscripten output; no third workflow needed.
+    if: (github.event_name == 'pull_request' && (contains(github.event.pull_request.title, 'Modal') || contains(github.event.pull_request.title, 'ABI'))) || (github.event_name == 'workflow_dispatch' && inputs.qualify_modal_wasm)
+    name: Pinned Emscripten build + native/WASM audio parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact BRKTRK source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Install pinned Emscripten SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --quiet --filter=blob:none https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          git -C "$RUNNER_TEMP/emsdk" checkout --quiet --detach c0bb220cb6e6f4e0fabb6f6db9efd53390ef5e56 # emsdk 4.0.23
+          "$RUNNER_TEMP/emsdk/emsdk" install 4.0.23
+          "$RUNNER_TEMP/emsdk/emsdk" activate 4.0.23
+      - name: Compile GPL Modal JS/WASM from this source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh" >/dev/null
+          emcc --version | head -n 1
+          npm run build:modal-wasm
+      - name: Compare WASM rendered audio to native golden samples
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/qualify-modal-wasm.sh
+      - name: Verify no public catalog or package was modified
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -d web/engines
+          test -s build/brk-modal-wasm/brk_modal_module.js
+          test -s build/brk-modal-wasm/brk_modal_module.wasm
+          git diff --exit-code
+          echo 'Private Modal qualification complete. No public engine package published.'
