@@ -68,8 +68,9 @@ change the production catalog or publish binaries.
 
 ## Independently testable native/WASM qualification
 
-A separate `.github/workflows/modal-wasm.yml` workflow runs for Modal/ABI
-source PRs and by manual dispatch. It installs the Emscripten 4.0.23 SDK from
+A conditional `modal_wasm` job in the existing `.github/workflows/ci.yml`
+executes for Modal/ABI pull requests and via `workflow_dispatch` with
+`qualify_modal_wasm=true`. It installs the Emscripten 4.0.23 SDK from
 the *pinned emsdk revision* `c0bb220cb6e6f4e0fabb6f6db9efd53390ef5e56`,
 compiles the imported C++ DSP/module into direct JS + WASM and runs
 `scripts/qualify-modal-wasm.sh`. The latter rebuilds a matching native
@@ -77,7 +78,8 @@ state + audio golden and uses the imported TypeScript/Node ABI harness to
 compare the emitted 192 stereo frames, validate the 768-byte state, no
 WASM memory growth after activation, concurrent module instances and ramps.
 
-This job is intentionally separate from lightweight Public CI. It does
+This job is separate from the lightweight Public CI test job, but lives
+inside the same workflow to preserve the repository's two-workflow policy. It does
 **not** upload binary artifacts, publish a package, alter Pages or mark
 BRK Modal as released. A successful run qualifies the direct JS/WASM
 factory only; actual Chrome AudioWorklet playback and complete presets,
