@@ -15,7 +15,7 @@ const html = readFileSync("scripts/fixtures/modal-worklet-test.html", "utf8");
 const js = glue
   + "\nconst __brkWasmBytes = new Uint8Array(" + JSON.stringify([...wasm]) + ");\n"
   + "const __brkState = new Uint8Array(" + JSON.stringify([...state]) + ");\n"
-  + "const __brkModule = await Module({wasmBinary: __brkWasmBytes});\n"
+  + "const __brkModulePromise = Module({wasmBinary: __brkWasmBytes});\n"
   + processor;
 const paths = new Map([
   ["/modal-worklet-test.html", ["text/html; charset=utf-8", html]],

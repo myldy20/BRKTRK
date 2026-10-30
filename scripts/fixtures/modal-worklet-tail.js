@@ -4,7 +4,21 @@
 class BRKModalQualificationProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.m = __brkModule;
+    this.ready = false;
+    // addModule() can finish BEFORE an asynchronous WASM factory settles.
+    // Register this processor synchronously, then initialize its ABI runtime.
+    __brkModulePromise.then((module) => {
+      try { this.initialize(module); }
+      catch (error) {
+        this.port.postMessage({ status: "error", message: "Modal initialization: " + String(error?.message ?? error) });
+      }
+    }).catch((error) => {
+      this.port.postMessage({ status: "error", message: "Emscripten factory: " + String(error?.message ?? error) });
+    });
+  }
+
+  initialize(module) {
+    this.m = module;
     this.base = this.m._malloc(2 * 1024 * 1024);
     if (!this.base || this.m._brk_abi_version() !== 0x00010000) {
       throw new Error("Modal Worklet ABI/memory initialization failed");
@@ -42,10 +56,12 @@ class BRKModalQualificationProcessor extends AudioWorkletProcessor {
     this.sumSquares = 0;
     this.peak = 0;
     this.memoryBefore = this.m.HEAPU8.buffer.byteLength;
+    this.ready = true;
     this.port.postMessage({ status: "ready", memoryBytes: this.memoryBefore });
   }
 
   process(inputs, outputs) {
+    if (!this.ready) return true;
     try {
       const out = outputs[0];
       if (!out || out.length < 2) throw new Error("AudioWorklet stereo output missing");
