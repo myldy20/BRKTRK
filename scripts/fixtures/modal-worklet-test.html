@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>BRK Modal actual Chromium AudioWorklet qualification</title>
+<pre id="result">PENDING</pre>
+<script type="module">
+const result = document.querySelector("#result");
+const fail = (error) => {
+  result.textContent = "BRKTRK_BROWSER_TESTS_FAILED: " + String(error?.message ?? error);
+};
+(async () => {
+  const context = new AudioContext({ sampleRate: 48000, latencyHint: "interactive" });
+  if (!context.audioWorklet) throw new Error("AudioWorklet unavailable");
+  await context.audioWorklet.addModule("./modal-qualification-worklet.js");
+  const node = new AudioWorkletNode(context, "brk-modal-qualification", {
+    numberOfInputs: 0,
+    numberOfOutputs: 1,
+    outputChannelCount: [2],
+  });
+  node.onprocessorerror = () => fail("Modal AudioWorklet processorerror");
+  let ready = false;
+  node.port.onmessage = (event) => {
+    const data = event.data || {};
+    if (data.status === "error") return fail(data.message);
+    if (data.status === "ready") {
+      ready = true;
+      if (data.memoryBytes !== 33554432) fail("unexpected 32 MiB Modal memory size");
+    }
+    if (data.status === "complete") {
+      if (!ready || data.blocks !== 32 || data.sampleCount !== 8192
+          || !Number.isFinite(data.peak) || data.peak < 1e-7
+          || !Number.isFinite(data.rms) || data.rms < 1e-8
+          || data.wasmMemoryBytes !== 33554432 || data.memoryGrowth) {
+        return fail("invalid or silent Modal Worklet output: " + JSON.stringify(data));
+      }
+      result.dataset.diagnostics = JSON.stringify(data);
+      result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+      node.disconnect();
+      void context.close();
+    }
+  };
+  // The headless browser still processes a connected path; silence the
+  // destination only AFTER generating and validating the real stereo output.
+  const monitor = context.createGain();
+  monitor.gain.value = 0;
+  node.connect(monitor).connect(context.destination);
+  await context.resume();
+  setTimeout(() => {
+    if (result.textContent !== "BRKTRK_BROWSER_TESTS_PASSED"
+        && !result.textContent.startsWith("BRKTRK_BROWSER_TESTS_FAILED:")) {
+      fail("Modal AudioWorklet did not produce 32 blocks within deadline");
+    }
+  }, 20000);
+})().catch(fail);
+</script>
