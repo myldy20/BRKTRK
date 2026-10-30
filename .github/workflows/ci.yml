@@ -105,6 +105,8 @@ jobs:
         run: |
           set -euo pipefail
           bash scripts/qualify-modal-wasm.sh
+      - name: Qualify the real Chrome AudioWorklet environment
+        run: node scripts/qualify-modal-audioworklet.mjs
       - name: Verify no public catalog or package was modified
         shell: bash
         run: |
