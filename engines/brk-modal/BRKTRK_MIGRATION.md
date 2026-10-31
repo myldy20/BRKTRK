@@ -98,3 +98,16 @@ be applicable, immutable and byte-identical to their packaged state. No
 network access or private checkout is used to generate factory data.
 
 Binary package construction and release authorization remain a separate gate.
+
+## Test-only immutable BRK Modal candidate archive
+
+`bash scripts/build-modal-candidate-package.sh` builds a new
+`1.1.1-brktrk1` **candidate**, with pinned Emscripten JS/WASM, the 34
+validated native preset states and full 89-parameter registry derived from the
+native ABI descriptor fixture. Metadata includes a GPL source/provenance
+reference tied to the exact BRKTRK commit and a transport-level package SHA.
+The **real** BRKTRK tar transport/production package loader and preset domain
+must accept the archive; a deliberately corrupted archive must fail SHA check.
+Candidate files stay under gitignored `build/` only. This is a qualification
+step, **not** public engine publication or acceptance of the old private
+binary identity. Browser production Worklet/Program/Project E2E is next.

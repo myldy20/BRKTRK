@@ -110,6 +110,9 @@ jobs:
           bash scripts/qualify-modal-wasm.sh
       - name: Qualify the real Chrome AudioWorklet environment
         run: node scripts/qualify-modal-audioworklet.mjs
+      - name: Build unpublished SHA-pinned Modal package and verify real production loader
+        shell: bash
+        run: bash scripts/build-modal-candidate-package.sh
       - name: Verify no public catalog or package was modified
         shell: bash
         run: |
