@@ -63,7 +63,7 @@ def parameter_records(path: Path, ui: dict) -> list[dict]:
         enums = struct.unpack_from("<I", row, 64)[0]
         if kind not in (1, 2, 3, 4):
             raise ValueError("unknown native parameter type")
-        if enums and (kind != 3 or len(labels.get(key, [])) != enums):
+        if enums and (kind not in (3, 4) or len(labels.get(key, [])) != enums):
             raise ValueError(f"missing enum labels for {key}: {enums}")
         result.append({
             "id": key, "key": key, "numericId": numeric_id, "abiId": numeric_id,
