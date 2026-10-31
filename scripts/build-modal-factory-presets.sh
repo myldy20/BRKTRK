@@ -4,7 +4,7 @@
 # Requires Python 3, CMake, and a native C++17 compiler (no network).
 set -euo pipefail
 
-root="\${BRKTRK_MODAL_FACTORY_BUILD_DIR:-build/brk-modal-factory}"
+root="${BRKTRK_MODAL_FACTORY_BUILD_DIR:-build/brk-modal-factory}"
 mkdir -p "$root"
 root="$(cd "$root" && pwd)"
 source_dir="engines/brk-modal/upstream-factory"
