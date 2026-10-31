@@ -62,6 +62,9 @@ jobs:
           # Configure-only: runner has no Emscripten SDK. This rejects a
           # hidden dependency on the private host's Worklet generator.
           cmake -S abi -B /tmp/brktrk-modal-wasm-config -DEMSCRIPTEN=ON -DBRK_MODAL_BUILD_LEGACY_WORKLET=OFF
+      - name: Generate and validate all 34 GPL Modal factory presets
+        shell: bash
+        run: bash scripts/build-modal-factory-presets.sh
       - name: Build local developer engine
         run: npm run dev:engine
       - name: Build compact public web app

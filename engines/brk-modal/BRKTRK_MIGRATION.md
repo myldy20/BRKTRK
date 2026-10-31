@@ -84,3 +84,17 @@ inside the same workflow to preserve the repository's two-workflow policy. It do
 BRK Modal as released. A successful run qualifies the direct JS/WASM
 factory only; actual Chrome AudioWorklet playback and complete presets,
 source/notice/archive verification remain independent release gates.
+
+## GPL factory presets are now source-owned
+
+The 28 original RipplerX 1.5.18 factory XML files are checked into
+`upstream-factory/resources/presets/` at exact upstream commit
+`e9f6537e5e3d6c648b2463e6a90f15e5f612bb75` (28/28 blob SHA matches).
+`bash scripts/build-modal-factory-presets.sh` builds the deterministic
+28 Reference + 6 BRK state-v1 banks and enriches the JSON index with all
+89 actual binary normalized values per preset. Public CI validates the full
+bank using the *real* `BRKTRKEnginePresetDomain.createLibrary`: all 34 must
+be applicable, immutable and byte-identical to their packaged state. No
+network access or private checkout is used to generate factory data.
+
+Binary package construction and release authorization remain a separate gate.
