@@ -902,8 +902,9 @@ const PARAMETER_READ_LIMIT = 4096;
       if (!reader) return null;
 
       let moduleDescriptor = null;
-      if (typeof module._brk_module_descriptor === "function"
-        && Number(module._brk_module_descriptor(scratch, DESCRIPTOR_SCRATCH_BYTES)) === MODULE_DESCRIPTOR_BYTES) {
+      const moduleBytes = typeof module._brk_module_descriptor === "function"
+        ? Number(module._brk_module_descriptor(scratch, DESCRIPTOR_SCRATCH_BYTES)) : 0;
+      if (moduleBytes >= MODULE_DESCRIPTOR_BYTES && moduleBytes <= DESCRIPTOR_SCRATCH_BYTES) {
         moduleDescriptor = Object.freeze({
           engineCount: reader.u32(scratch + 12),
           moduleId: reader.text(scratch + 16),
@@ -914,8 +915,9 @@ const PARAMETER_READ_LIMIT = 4096;
       }
 
       let engineDescriptor = null;
-      if (typeof module._brk_engine_descriptor === "function"
-        && Number(module._brk_engine_descriptor(engine, scratch, DESCRIPTOR_SCRATCH_BYTES)) === ENGINE_DESCRIPTOR_BYTES) {
+      const engineBytes = typeof module._brk_engine_descriptor === "function"
+        ? Number(module._brk_engine_descriptor(engine, scratch, DESCRIPTOR_SCRATCH_BYTES)) : 0;
+      if (engineBytes >= ENGINE_DESCRIPTOR_BYTES && engineBytes <= DESCRIPTOR_SCRATCH_BYTES) {
         engineDescriptor = Object.freeze({
           engineId: reader.text(scratch + 8),
           displayName: reader.text(scratch + 8 + STRING_REF_BYTES),
@@ -940,7 +942,10 @@ const PARAMETER_READ_LIMIT = 4096;
       if (hasDeclaredCount && declared > PARAMETER_READ_LIMIT) return null;
       const limit = hasDeclaredCount ? declared : PARAMETER_READ_LIMIT;
       for (let index = 0; index < limit; index += 1) {
-        if (Number(module._brk_parameter_descriptor(engine, index, scratch, DESCRIPTOR_SCRATCH_BYTES)) !== PARAMETER_DESCRIPTOR_BYTES) break;
+        // The native ABI returns bytes written including its inline UTF-8 strings.
+        // Requiring exactly the fixed 96-byte struct silently drops all descriptors.
+        const written = Number(module._brk_parameter_descriptor(engine, index, scratch, DESCRIPTOR_SCRATCH_BYTES));
+        if (written < PARAMETER_DESCRIPTOR_BYTES || written > DESCRIPTOR_SCRATCH_BYTES) break;
         const key = reader.text(scratch + 16);
         if (!key) break;
         parameters.push(Object.freeze({

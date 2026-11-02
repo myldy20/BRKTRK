@@ -411,9 +411,11 @@ async function registrationFailureEvidence() {
     },
   };
   const composed = host.buildWorkletModuleSource(loaded);
-  await vm.runInContext(`(async function () {\n"use strict";\n${composed}\n}).call(undefined)`, scope, { filename: "failing-engine-module.js" });
-  await Promise.resolve();
-  await Promise.resolve();
+  await assert.rejects(
+    vm.runInContext(`(async function () {\n"use strict";\n${composed}\n}).call(undefined)`, scope, { filename: "failing-engine-module.js" }),
+    /runtime reports ABI 131072, expected 65536/,
+    "the composed module must still throw, so the Worklet console shows the failure",
+  );
 
   const recorded = Array.from(runtime.registrationFailures());
   assert.equal(recorded.length, 1, "the Worklet runtime must keep the registration failure");
