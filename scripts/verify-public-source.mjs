@@ -18,6 +18,7 @@ const tests = [
   "web/brk-synth-abi-v1-deferred-parameter.test.cjs",
   "web/brk-synth-abi-v1-note-velocity.test.cjs",
   "web/brk-synth-abi-v1-worklet.test.cjs",
+  "web/brk-synth-descriptor-total-bytes.test.cjs",
   "web/brk-synth-prepared-lifecycle-reservation.test.cjs",
   "web/command-dispatcher.test.cjs",
   "web/command-state.test.cjs",

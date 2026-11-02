@@ -1,0 +1,83 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Modal in the real BRKTRK production Worklet</title>
+<pre id="result">PENDING</pre>
+<script type="module">
+const result = document.getElementById("result");
+const expected = __EXPECTED__;
+function fail(value) {
+  result.textContent = "BRKTRK_BROWSER_TESTS_FAILED: " + String(value);
+}
+(async () => {
+  const context = new AudioContext({ sampleRate: 48000 });
+  if (!context.audioWorklet) throw Error("AudioWorklet unavailable");
+  await context.audioWorklet.addModule("/web/audio-worklet.js");
+  const node = new AudioWorkletNode(context, "brktrk-audio", {
+    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2],
+  });
+  node.onprocessorerror = () => fail("production AudioWorklet processorerror");
+  const gain = context.createGain();
+  gain.gain.value = 0;
+  node.connect(gain).connect(context.destination);
+  await context.resume();
+  let settled = false;
+  let lastRegistry = null;
+  let lastDescriptors = null;
+  node.port.onmessage = ({ data }) => {
+    if (settled || result.textContent.startsWith("BRKTRK_BROWSER_TESTS_FAILED:")) return;
+    if (data?.type === "production-engine-error" || data?.type === "production-transport-rejected") {
+      settled = true;
+      fail("production message error: " + JSON.stringify(data));
+      return;
+    }
+    if (data?.type === "production-package-registry") {
+      lastRegistry = data;
+      return;
+    }
+    if (data?.type !== "production-engine-descriptors") return;
+    lastDescriptors = data;
+    const row = (data.engines || []).find(item =>
+      item.moduleId === expected.moduleId &&
+      item.engineId === expected.engineId &&
+      item.version === expected.version &&
+      item.packageSha256 === expected.sha);
+    if (!row) return;
+    if (!Array.isArray(row.parameters) || row.parameters.length !== 89) {
+      settled = true;
+      fail("wrong ABI parameter count " + (row.parameters?.length ?? -1));
+      return;
+    }
+    const keys = row.parameters.map(p => p.key);
+    if (new Set(keys).size !== 89 || keys.some(k => typeof k !== "string" || !k)) {
+      settled = true;
+      fail("duplicate or missing native ABI parameter keys");
+      return;
+    }
+    settled = true;
+    result.dataset.diagnostics = JSON.stringify({
+      worklet: "brktrk-audio", engine: row.engineId, abiParameters: keys.length,
+      exactPackageSha: row.packageSha256,
+    });
+    result.textContent = "BRKTRK_BROWSER_TESTS_PASSED";
+    node.disconnect();
+    void context.close();
+  };
+  // This is the real host-generated source from the SHA-verified tarball.
+  // Registration may occur after addModule has returned (Emscripten Promise).
+  await context.audioWorklet.addModule("/modal-production-package.js");
+  for (let attempt = 0; attempt < 40 && !settled; attempt++) {
+    node.port.postMessage({
+      type: "production-engine-descriptors-request",
+      requestId: "modal-package-" + attempt,
+    });
+    node.port.postMessage({
+      type: "production-package-registry-request",
+      requestId: "modal-registry-" + attempt,
+    });
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+  if (!settled) fail("verified Modal not registered: " + JSON.stringify({
+    lastRegistry, lastDescriptors, expected,
+  }));
+})().catch(error => fail(error?.stack ?? error));
+</script>
