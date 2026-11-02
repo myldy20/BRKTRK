@@ -21,6 +21,8 @@ function fail(value) {
   node.connect(gain).connect(context.destination);
   await context.resume();
   let settled = false;
+  let lastRegistry = null;
+  let lastDescriptors = null;
   node.port.onmessage = ({ data }) => {
     if (settled || result.textContent.startsWith("BRKTRK_BROWSER_TESTS_FAILED:")) return;
     if (data?.type === "production-engine-error" || data?.type === "production-transport-rejected") {
@@ -28,7 +30,12 @@ function fail(value) {
       fail("production message error: " + JSON.stringify(data));
       return;
     }
+    if (data?.type === "production-package-registry") {
+      lastRegistry = data;
+      return;
+    }
     if (data?.type !== "production-engine-descriptors") return;
+    lastDescriptors = data;
     const row = (data.engines || []).find(item =>
       item.moduleId === expected.moduleId &&
       item.engineId === expected.engineId &&
@@ -63,8 +70,14 @@ function fail(value) {
       type: "production-engine-descriptors-request",
       requestId: "modal-package-" + attempt,
     });
+    node.port.postMessage({
+      type: "production-package-registry-request",
+      requestId: "modal-registry-" + attempt,
+    });
     await new Promise(resolve => setTimeout(resolve, 150));
   }
-  if (!settled) fail("verified Modal never entered production Worklet ABI descriptor registry");
+  if (!settled) fail("verified Modal not registered: " + JSON.stringify({
+    lastRegistry, lastDescriptors, expected,
+  }));
 })().catch(error => fail(error?.stack ?? error));
 </script>
