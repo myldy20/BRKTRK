@@ -41,7 +41,7 @@ const root = resolve("web");
 const diagnosticSource = 'registerProcessor("brktrk-modal-probe",class extends AudioWorkletProcessor{constructor(){super();this.port.onmessage=()=>{const r=globalThis.BRKTRKBrkSynthAbiV1Runtime;this.port.postMessage({before:globalThis.__modalBefore||false,after:globalThis.__modalAfter||false,records:r?.runtimeRecords?.().map(x=>({engineId:x.entry?.engineId,version:x.entry?.version,descriptors:x.abiDescriptors?.parameters?.length})),failures:r?.registrationFailures?.()})}}process(){return true}});';
 const serve = new Map([
   ["/index.html", ["text/html; charset=utf-8", html]],
-  ["/modal-production-package.js", ["text/javascript; charset=utf-8", "globalThis.__modalBefore=true;\\n".replace("\\\\n","\\n")+moduleSource+"\\nglobalThis.__modalAfter=true;\\n"]],
+  ["/modal-production-package.js", ["text/javascript; charset=utf-8", ["globalThis.__modalBefore=true;", moduleSource, "globalThis.__modalAfter=true;"].join("\n")]],
   ["/modal-probe.js", ["text/javascript; charset=utf-8", diagnosticSource]],
 ]);
 const server = createServer((req, res) => {
