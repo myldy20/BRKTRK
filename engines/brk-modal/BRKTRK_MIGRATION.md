@@ -111,3 +111,17 @@ must accept the archive; a deliberately corrupted archive must fail SHA check.
 Candidate files stay under gitignored `build/` only. This is a qualification
 step, **not** public engine publication or acceptance of the old private
 binary identity. Browser production Worklet/Program/Project E2E is next.
+
+## Real production Worklet registration gate
+
+`scripts/qualify-modal-production-worklet.mjs` reads the actual 34-preset
+SHA-pinned candidate tar.gz through the BRKTRK package loader. It builds the
+engine module using `BRKTRKProductionEngineHost.buildWorkletModuleSource`,
+loads the complete `web/audio-worklet.js` module graph into a real Chromium
+`AudioWorkletNode("brktrk-audio")`, then requests production ABI descriptors.
+The module's 89 unique parameters and exact package SHA must be reported from
+the real production Worklet registry. The entire fixture stays inside ephemeral
+localhost CI; nothing is copied to the public catalog or Pages.
+
+This is package-to-production-Worklet qualification, **not** the final end-to-end
+Project create/replace/play/save/reopen + live UI release gate.
