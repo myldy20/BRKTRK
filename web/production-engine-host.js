@@ -231,14 +231,15 @@
     if (!(jsBytes instanceof Uint8Array) || !(wasmBytes instanceof Uint8Array)) throw new browserDomain.EnginePackageTransportError("runtime-missing", `verified package is missing direct runtime ${paths.js}/${paths.wasm}`);
     const js = new TextDecoder().decode(jsBytes);
     const wasmLiteral = Array.from(wasmBytes).join(",");
-    // A failure below is an uncaught exception inside the Worklet's top-level
-    // await, and addModule() resolves regardless. Record the engine's own
-    // reason where the registry probe can return it, then rethrow so the
-    // Worklet console still shows it.
+    // AudioWorklet.addModule() can resolve before an Emscripten factory has
+    // settled. Top-level await here can strand the worklet registration while
+    // the processor still answers registry requests with zero engines.
+    // Register asynchronously after Module() settles, and report rejections
+    // through the real production registration-failure registry.
     const entryLiteral = JSON.stringify(loaded.entry);
     // Catch JS glue failures as well as Module()/ABI failures; a missing
     // Worklet global may throw before Module is even defined.
-    return `const __brktrkEntry=${entryLiteral};try{\n${js}\nconst __brktrkWasm=new Uint8Array([${wasmLiteral}]);const __brktrkModule=await Module({wasmBinary:__brktrkWasm});globalThis.BRKTRKBrkSynthAbiV1Runtime.registerModuleRuntime({entry:__brktrkEntry,manifest:${JSON.stringify(loaded.manifest)},module:__brktrkModule});}catch(__brktrkError){try{globalThis.BRKTRKBrkSynthAbiV1Runtime.recordRegistrationFailure?.(__brktrkEntry,__brktrkError);}catch(__brktrkIgnored){}throw __brktrkError;}\n`;
+    return `const __brktrkEntry=${entryLiteral};try{\n${js}\nconst __brktrkWasm=new Uint8Array([${wasmLiteral}]);Promise.resolve(Module({wasmBinary:__brktrkWasm})).then(function(__brktrkModule){globalThis.BRKTRKBrkSynthAbiV1Runtime.registerModuleRuntime({entry:__brktrkEntry,manifest:${JSON.stringify(loaded.manifest)},module:__brktrkModule});}).catch(function(__brktrkError){try{globalThis.BRKTRKBrkSynthAbiV1Runtime.recordRegistrationFailure?.(__brktrkEntry,__brktrkError);}catch(__brktrkIgnored){}try{console.error?.(__brktrkError);}catch(__brktrkIgnored){}});}catch(__brktrkError){try{globalThis.BRKTRKBrkSynthAbiV1Runtime.recordRegistrationFailure?.(__brktrkEntry,__brktrkError);}catch(__brktrkIgnored){}throw __brktrkError;}\n`;
   }
 
   function descriptorJson(loaded, path, label) {
