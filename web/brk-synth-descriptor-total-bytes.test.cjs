@@ -20,7 +20,7 @@ function writeStrings(baseBytes, values) {
   }
   return baseBytes + used;
 }
-const module = {
+const fakeModule = {
   HEAPU8: heap,
   _malloc: () => scratch,
   _free: () => {},
@@ -52,7 +52,7 @@ const module = {
     ]);
   },
 };
-const descriptors = read(module);
+const descriptors = read(fakeModule);
 assert.ok(descriptors, "struct + strings must parse as complete ABI metadata");
 assert.equal(descriptors.module.moduleId, "design.myldy.brk-modal");
 assert.equal(descriptors.engine.engineId, "brk-modal");
@@ -60,7 +60,7 @@ assert.equal(descriptors.engine.parameterCount, 2);
 assert.deepEqual(descriptors.parameters.map(p => p.key), ["a_decay", "b_decay"]);
 assert.deepEqual(descriptors.parameters.map(p => p.abiId), [1, 2]);
 assert.deepEqual(descriptors.parameters.map(p => p.displayName), ["A Decay", "B Decay"]);
-const oversize = { ...module, _brk_parameter_descriptor: (engine, index) =>
-  index === 1 ? 300 : module._brk_parameter_descriptor(engine, index) };
+const oversize = { ...fakeModule, _brk_parameter_descriptor: (engine, index) =>
+  index === 1 ? 300 : fakeModule._brk_parameter_descriptor(engine, index) };
 assert.equal(read(oversize), null, "do not accept truncated descriptor sets or oversized records");
 console.log("Modal ABI descriptor total-size contract PASS");
