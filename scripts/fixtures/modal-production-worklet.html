@@ -20,11 +20,6 @@ function fail(value) {
   gain.gain.value = 0;
   node.connect(gain).connect(context.destination);
   await context.resume();
-  await context.audioWorklet.addModule("/modal-probe.js");
-  const probe = new AudioWorkletNode(context, "brktrk-modal-probe");
-  probe.connect(gain);
-  let lastProbe = null;
-  probe.port.onmessage = ({ data }) => { lastProbe = data; };
   let settled = false;
   let lastRegistry = null;
   let lastDescriptors = null;
@@ -75,7 +70,6 @@ function fail(value) {
       type: "production-engine-descriptors-request",
       requestId: "modal-package-" + attempt,
     });
-    probe.port.postMessage({type:"probe"});
     node.port.postMessage({
       type: "production-package-registry-request",
       requestId: "modal-registry-" + attempt,
@@ -83,7 +77,7 @@ function fail(value) {
     await new Promise(resolve => setTimeout(resolve, 150));
   }
   if (!settled) fail("verified Modal not registered: " + JSON.stringify({
-    lastRegistry, lastDescriptors, lastProbe, expected,
+    lastRegistry, lastDescriptors, expected,
   }));
 })().catch(error => fail(error?.stack ?? error));
 </script>
