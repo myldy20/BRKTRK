@@ -123,5 +123,26 @@ The module's 89 unique parameters and exact package SHA must be reported from
 the real production Worklet registry. The entire fixture stays inside ephemeral
 localhost CI; nothing is copied to the public catalog or Pages.
 
-This is package-to-production-Worklet qualification, **not** the final end-to-end
-Project create/replace/play/save/reopen + live UI release gate.
+This gate proves package-to-production-Worklet registration. Project-level
+playback and persistence are covered separately below.
+
+## Browser Project journey and performer budget
+
+The host's former default 128 KiB per-performer realtime budget rejected the
+Modal adapter's 768 KiB minimum at `brk_instance_prepare` (ABI result -4),
+even though the package registered successfully. The host now passes a finite
+1 MiB default while retaining an explicit caller-specified limit. This value is
+an ABI budget per performer, not a request to allocate another 1 MiB Wasm heap;
+Modal's existing fixed 32 MiB module memory and eight-instance capacity remain.
+
+`scripts/qualify-modal-project-journey.mjs` builds a separate temporary engine
+store, adds only the exact SHA-verified unpublished preview candidate, and runs
+the actual BRKTRK UI in Chromium at 1210 and 390 pixel viewport widths. It
+selects Modal, applies a factory preset, measures finite nonzero output from the
+real production Worklet, saves and reopens the Project after a full page reload,
+then replaces Modal with POLY and back and verifies output again. The test
+checks exact engine SHA and preset identity after reopening. It does not publish
+the candidate, establish physical phone/audio acceptance, or test every preset.
+
+Public catalog release still requires the package-level release/source and
+provenance gates in issue #8; old private package identities must not be reused.
