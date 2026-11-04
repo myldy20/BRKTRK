@@ -7,6 +7,7 @@ function fakeModule() {
   const HEAPF32 = new Float32Array(buffer);
   let cursor = 4096;
   const seen = [];
+  const prepareLimits = [];
   let destroyed = 0;
   let nextHandle = 6;
   const liveHandles = new Set();
@@ -14,13 +15,14 @@ function fakeModule() {
     HEAPU8,
     HEAPF32,
     seen,
+    prepareLimits,
     get destroyed() { return destroyed; },
     _malloc(size) { const ptr = cursor; cursor += Number(size); return ptr; },
     _free() {},
     _brk_abi_version() { return 0x00010000; },
     liveHandles,
     _brk_instance_create() { const handle = ++nextHandle; liveHandles.add(handle); return handle; },
-    _brk_instance_prepare() { return 0; },
+    _brk_instance_prepare(_handle, ptr) { prepareLimits.push(new DataView(buffer).getUint32(ptr + 28, true)); return 0; },
     _brk_instance_activate() { return 0; },
     _brk_instance_deactivate() { return 0; },
     _brk_instance_reset() { return 0; },
@@ -82,6 +84,13 @@ const manifest = {
 const record = abi.registerModuleRuntime({ entry, manifest, module: wasmModule });
 const factory = abi.createPerformerFactory(record, { maxBlockFrames: 16, maxEventsPerPerformer: 16 });
 const performer = factory({ track: 2, instrumentId: 3, sampleRate: 48000, parameterSnapshot: { cutoff: 0.5 } });
+assert.equal(wasmModule.prepareLimits[0], 1024 * 1024, 'default per-performer budget must accommodate Modal');
+const overrideModule = fakeModule();
+const overrideFactory = abi.createPerformerFactory({ entry, manifest, module: overrideModule },
+  { maxBlockFrames: 16, maxEventsPerPerformer: 16, realtimeMemoryLimitBytes: 128 * 1024 });
+const overridePerformer = overrideFactory({ track: 0, instrumentId: 0, sampleRate: 48000 });
+assert.equal(overrideModule.prepareLimits[0], 128 * 1024, 'explicit host budget must be preserved');
+overridePerformer.destroy();
 
 assert.deepEqual([...abi.base64Bytes("AQIDBA==")], [1, 2, 3, 4]);
 assert.equal(abi.parameterMap(manifest).get("cutoff").abiId, 513);

@@ -14,7 +14,9 @@
   const PREPARED_ACTION_TYPE = Object.freeze([null, "note-off", "note-on", "retrigger"]);
   const DEFAULT_MAX_BLOCK_FRAMES = 2048;
   const DEFAULT_MAX_EVENTS_PER_PERFORMER = 2048;
-  const DEFAULT_REALTIME_MEMORY_LIMIT_BYTES = 128 * 1024;
+  // This is the ABI's per-performer budget, not a Wasm heap allocation.
+  // Modal requires 768 KiB; keep a finite 1 MiB ceiling while allowing it.
+  const DEFAULT_REALTIME_MEMORY_LIMIT_BYTES = 1024 * 1024;
   const MAX_NOTE_ID = 0x7fffffff;
 
   class BrkSynthAbiError extends Error {
