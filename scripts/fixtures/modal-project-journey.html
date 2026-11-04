@@ -182,7 +182,12 @@
       result.dataset.diagnostics = JSON.stringify({ width, engine: modal.engineId, sha: modal.packageSha256,
         presetId, peakBefore, peakAfter, peakReplacement });
       result.textContent = 'BRKTRK_BROWSER_TESTS_PASSED';
-    })().catch(error => { result.textContent = 'BRKTRK_BROWSER_TESTS_FAILED: ' + String(error?.stack ?? error).slice(0, 4000); });
+    })().catch(error => {
+      const app = frame.contentWindow;
+      result.textContent = 'BRKTRK_BROWSER_TESTS_FAILED: ' + String(error?.stack ?? error).slice(0, 1500)
+        + ' · details=' + JSON.stringify(error?.details ?? null)
+        + ' · registration=' + JSON.stringify(app?.BRKTRKProductionEngineBootstrap?.registrationSnapshot?.() ?? null);
+    });
   }, { once: true });
 })();
 </script>

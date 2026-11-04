@@ -95,6 +95,10 @@
                 // state so the main thread cannot declare the current Project
                 // ready while transport still owns an older registry/snapshot.
                 packages: snapshot.activeRegistryPackages ?? [],
+                // Emscripten can finish registering after addModule returns.
+                // The host must not spend its one stopped-only reconciliation
+                // until the exact runtime is present in this Worklet scope.
+                registeredPackages: snapshot.registeredPackages ?? [],
                 pendingInstrumentSync: snapshot.pendingInstrumentSync === true,
                 transportActive: snapshot.transportActive === true,
                 // Packages whose registration threw in this Worklet scope, with

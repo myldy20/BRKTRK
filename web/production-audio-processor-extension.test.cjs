@@ -135,6 +135,7 @@ assert.deepEqual(registryResponse, {
   type: "production-package-registry",
   requestId: "registry-7",
   packages: [registeredPackage],
+  registeredPackages: [registeredPackage],
   pendingInstrumentSync: false,
   transportActive: false,
   // No package failed to register in this scope; the probe says so explicitly

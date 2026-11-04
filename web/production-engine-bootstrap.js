@@ -173,6 +173,7 @@
         resolve(Object.freeze({
           requestId,
           packages: Array.isArray(message.packages) ? message.packages : [],
+          registeredPackages: Array.isArray(message.registeredPackages) ? message.registeredPackages : [],
           pendingInstrumentSync: message.pendingInstrumentSync === true,
           transportActive: message.transportActive === true,
           registrationFailures: Array.isArray(message.registrationFailures) ? message.registrationFailures : [],
@@ -231,6 +232,7 @@
     const pollDelay = Math.max(0, Math.min(250, Number(pollMs) || 20));
     const deadline = Date.now() + totalTimeout;
     let lastObserved = Object.freeze([]);
+    let lastRegistered = Object.freeze([]);
     let lastPendingInstrumentSync = false;
     let lastTransportActive = false;
     let probes = 0;
@@ -248,6 +250,7 @@
       }
       if (response) {
         lastObserved = Object.freeze(response.packages.map((entry) => Object.freeze({ ...entry })));
+        lastRegistered = Object.freeze(response.registeredPackages.map((entry) => Object.freeze({ ...entry })));
         lastPendingInstrumentSync = response.pendingInstrumentSync;
         lastTransportActive = response.transportActive;
         if (!lastPendingInstrumentSync && registryMatches(requirements, lastObserved)) {
@@ -294,7 +297,8 @@
         // Worklet rebuilds its active registry from the now-registered runtime.
         if (!reconciledActiveRegistry
           && !lastPendingInstrumentSync
-          && !lastTransportActive) {
+          && !lastTransportActive
+          && registryMatches(requirements, lastRegistered)) {
           reconciledActiveRegistry = true;
           host.syncProject?.(project, { force: true });
           node.port.postMessage({ type: "production-diagnostics-request" });
@@ -307,6 +311,7 @@
     const details = Object.freeze({
       requirements,
       observed: lastObserved,
+      registered: lastRegistered,
       pendingInstrumentSync: lastPendingInstrumentSync,
       transportActive: lastTransportActive,
       probes,
