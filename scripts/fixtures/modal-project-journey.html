@@ -71,6 +71,7 @@
       assert(view.entry.packageSha256 === modal.packageSha256 && view.parameters.length === 89,
         'Modal package verification or descriptors failed');
       assert(view.presets?.presets?.length === 34, 'Modal factory bank not available');
+      await app.BRKTRKAudioReadiness.ensureReady({ source: 'modal-project-journey-before-create' });
       doc.querySelector('[data-panel="sound"]').click();
       app.BRKTRKSoundEditRenderer.renderProductionSurface();
       stage('CREATE_' + width);
@@ -79,7 +80,8 @@
       assert(modalIndex >= 0 && [...selector.options].some(o => o.value === String(modalIndex) && !o.disabled), 'Modal not selectable');
       selector.value = String(modalIndex);
       selector.dispatchEvent(new app.Event('change', { bubbles: true }));
-      doc.querySelector('#instrumentInspector .a4a-create-panel button').click();
+      assert(selector.value === String(modalIndex), 'Modal selection did not stick');
+      selector.closest('.a4a-create-panel').querySelector('button').click();
       await until(() => project.getState().instrumentPool?.[0]?.engineRef?.resolvedPackageSha256 === modal.packageSha256,
         () => 'Modal creation failed: ' + JSON.stringify({ status: doc.querySelector('#instrumentInspector .a4a-sound-state')?.textContent,
           selected: doc.querySelector('#instrumentInspector select[aria-label="Production synth engine"]')?.value,
