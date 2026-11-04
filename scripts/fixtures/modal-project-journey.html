@@ -20,7 +20,7 @@
       if (value) return value;
       await sleep(50);
     }
-    throw Error(message);
+    throw Error(typeof message === 'function' ? message() : message);
   }
   async function ready() {
     const app = frame.contentWindow, doc = frame.contentDocument;
@@ -81,7 +81,9 @@
       selector.dispatchEvent(new app.Event('change', { bubbles: true }));
       doc.querySelector('#instrumentInspector .a4a-create-panel button').click();
       await until(() => project.getState().instrumentPool?.[0]?.engineRef?.resolvedPackageSha256 === modal.packageSha256,
-        'Modal creation failed: ' + (doc.querySelector('#statusLine')?.textContent ?? ''));
+        () => 'Modal creation failed: ' + JSON.stringify({ status: doc.querySelector('#instrumentInspector .a4a-sound-state')?.textContent,
+          selected: doc.querySelector('#instrumentInspector select[aria-label="Production synth engine"]')?.value,
+          pool: project.getState().instrumentPool, engine: modal.engineId, sha: modal.packageSha256 }));
       stage('PRESET_' + width);
       const preset = await until(() => {
         const el = doc.querySelector('#instrumentInspector select[aria-label="Production Instrument preset"]');
@@ -98,14 +100,18 @@
       stage('AUDIO_' + width);
       const peakBefore = await audioEvidence(app, doc);
       stage('SAVE_' + width);
+      let fileOnDisk = '';
       if (session.snapshot().capabilities.directSave) {
         app.showSaveFilePicker = async () => ({ name: 'modal.brktrk',
-          async createWritable() { return { async write() {}, async close() {} }; } });
+          async getFile() { return { name: this.name, size: new TextEncoder().encode(fileOnDisk).length,
+            lastModified: 100, async text() { return fileOnDisk; } }; },
+          async createWritable() { return { async write(text) { fileOnDisk = String(text); }, async close() {} }; } });
       }
       app.HTMLAnchorElement.prototype.click = function () {};
       const saved = await session.dispatch({ type: 'project.saveAs', source: 'modal-project-journey' });
       assert(saved.ok && typeof saved.text === 'string', 'Save As failed');
       const portable = saved.text;
+      if (session.snapshot().capabilities.directSave) assert(fileOnDisk === portable, 'saved file bytes differ');
       const expected = JSON.stringify(app.BRKTRKProjectFileSessionDomain.canonicalProject(project.getState()));
       stage('RELOAD_' + width);
       await new Promise((resolve, reject) => {
