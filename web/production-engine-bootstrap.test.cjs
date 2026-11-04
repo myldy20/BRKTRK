@@ -68,6 +68,9 @@ class FixturePort {
   }
 
   emit(data) {
+    if (data?.type === "production-package-registry" && !Object.hasOwn(data, "registeredPackages")) {
+      data = { ...data, registeredPackages: [...this.registered.values()] };
+    }
     for (const listener of [...this.listeners]) listener({ data });
   }
 
@@ -293,6 +296,16 @@ const readiness = globalThis.BRKTRKAudioReadiness;
   assert.equal(proof.reconciledActiveRegistry, true);
   assert.ok(port.active.has(`${identity2.version}:${identity2.packageSha256}`));
   assert.equal(bootstrap.registrationSnapshot().forcedRegistryReconciliations, reconciliationsBefore + 1);
+
+  // Emscripten can finish module registration after addModule resolves and
+  // after the first Instrument snapshot. The single reconciliation must not
+  // be spent while the required package is still absent from the Worklet.
+  port.registered.delete(`${identity2.version}:${identity2.packageSha256}`);
+  port.active = new Map([[`${identity.version}:${identity.packageSha256}`, identity]]);
+  setTimeout(() => port.register(identity2), 10);
+  const lateProof = await bootstrap.awaitWorkletPackages({ node, project: project2, timeoutMs: 150, probeTimeoutMs: 20, pollMs: 1 });
+  assert.equal(lateProof.reconciledActiveRegistry, true);
+  assert.ok(port.active.has(`${identity2.version}:${identity2.packageSha256}`), 'late runtime must enter the active registry');
 
   // A stale registry discovered while transport is active must never be
   // structurally replaced by the readiness self-heal. It stays fail-closed and
