@@ -136,6 +136,35 @@ jobs:
       - name: Qualify Modal project playback and reopen on desktop and mobile
         if: steps.scope.outputs.qualify == 'true'
         run: node scripts/qualify-modal-project-journey.mjs
+      - name: Build versioned Modal release candidate
+        if: steps.scope.outputs.qualify == 'true'
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          # Pin the actual source commit rather than the temporary PR merge ref.
+          # A base change requires a fresh qualification before packaging.
+          git diff --quiet "$SOURCE_SHA" HEAD --
+          python3 scripts/build-modal-candidate-package.py --release --repo . \
+            --wasm-dir build/brk-modal-wasm --presets build/brk-modal-factory/presets \
+            --descriptor-fixture build/brk-modal-candidate/parameters.bin \
+            --output-dir build/brk-modal-release/output --head-sha "$SOURCE_SHA"
+          node scripts/test-modal-candidate-package.cjs build/brk-modal-release/output
+      - name: Qualify release candidate in real production Worklet
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-production-worklet.mjs build/brk-modal-release/output
+      - name: Qualify release candidate project journey
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-project-journey.mjs build/brk-modal-release/output
+      - name: Retain qualified Modal release candidate
+        if: steps.scope.outputs.qualify == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualified-modal-release
+          path: build/brk-modal-release/output/
+          if-no-files-found: error
+          retention-days: 7
       - name: Verify no public catalog or package was modified
         if: steps.scope.outputs.qualify == 'true'
         shell: bash

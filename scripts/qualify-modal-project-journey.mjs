@@ -22,7 +22,7 @@ try {
   const candidateDir = resolve(process.argv[2] || 'build/brk-modal-candidate/output');
   const row = JSON.parse(readFileSync(join(candidateDir, 'candidate-entry.json'), 'utf8'));
   const bytes = readFileSync(join(candidateDir, row.packageUrl.replace(/^\.\//, '')));
-  if (row.engineId !== 'brk-modal' || row.channel !== 'preview'
+  if (row.engineId !== 'brk-modal' || !['preview', 'stable'].includes(row.channel)
       || createHash('sha256').update(bytes).digest('hex') !== row.packageSha256) {
     throw Error('Modal candidate identity or SHA mismatch');
   }
@@ -53,7 +53,7 @@ try {
     let passed = false;
     for (let attempt = 1; attempt <= 2; attempt++) {
       const child = spawn(process.execPath, ['scripts/run-browser-cdp-fixture.mjs',
-        `http://127.0.0.1:${server.address().port}/modal-project-journey.html?width=${width}`,
+        `http://127.0.0.1:${server.address().port}/modal-project-journey.html?width=${width}&channel=${row.channel}`,
         join(root, `profile-${width}-${attempt}`), join(root, `chrome-${width}-${attempt}.stderr`)],
         { env: { ...process.env, BRKTRK_CDP_DISCOVERY_ATTEMPTS: '250' }, stdio: ['ignore', 'pipe', 'pipe'] });
       let out = '', err = '';
