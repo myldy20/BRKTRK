@@ -307,6 +307,22 @@ const readiness = globalThis.BRKTRKAudioReadiness;
   assert.equal(lateProof.reconciledActiveRegistry, true);
   assert.ok(port.active.has(`${identity2.version}:${identity2.packageSha256}`), 'late runtime must enter the active registry');
 
+  // A different archive with the same module and version is not permission to
+  // install it into the active registry for a hash-pinned Project.
+  port.registered.delete(`${identity2.version}:${identity2.packageSha256}`);
+  const wrongIdentity = { ...identity2, packageSha256: 'e'.repeat(64) };
+  port.register(wrongIdentity);
+  port.active = new Map([[`${identity.version}:${identity.packageSha256}`, identity]]);
+  const forcedBeforeWrongRegistration = forcedSyncCalls;
+  await assert.rejects(
+    bootstrap.awaitWorkletPackages({ node, project: project2, timeoutMs: 50, probeTimeoutMs: 15, pollMs: 1 }),
+    error => error?.code === 'worklet-package-registration-timeout'
+      && error.details?.reconciledActiveRegistry === false,
+  );
+  assert.equal(forcedSyncCalls, forcedBeforeWrongRegistration, 'wrong registered SHA must never trigger reconciliation');
+  port.registered.delete(`${wrongIdentity.version}:${wrongIdentity.packageSha256}`);
+  port.register(identity2);
+
   // A stale registry discovered while transport is active must never be
   // structurally replaced by the readiness self-heal. It stays fail-closed and
   // waits for the existing stopped-boundary reconciliation path instead.
