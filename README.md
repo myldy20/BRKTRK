@@ -8,6 +8,8 @@ This public-source candidate corresponds to Web 0.9.0. The original BRKTRK host 
 
 Open [BRKTRK on GitHub Pages](https://myldy20.github.io/BRKTRK/). The browser runs the tracker locally. Its catalog includes BRK DEV POLY, BRK DEV FM and the GPL BRK Modal physical-modeling engine. Engine packages load on demand and projects retain their exact package hash.
 
+To use Modal, open the SOUND panel, select **BRK MODAL** and create an Instrument; its factory presets are in the preset selector.
+
 ## Run it
 
 Requirements: Node.js 22+, Python 3, and a current Chromium browser.
