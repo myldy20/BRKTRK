@@ -40,7 +40,13 @@
     audio.node.connect(analyser).connect(sink).connect(audio.context.destination);
     const samples = new Float32Array(analyser.fftSize);
     doc.querySelector('#playButton').click();
-    await until(() => app.BRKTRKStores.transport.runtime.isPlaying(), 'transport did not start');
+    await until(() => app.BRKTRKStores.transport.runtime.isPlaying(), () => 'transport did not start: ' + JSON.stringify({
+      status: doc.querySelector('#statusLine')?.textContent,
+      transport: app.BRKTRKStores.transport.runtime.snapshot(),
+      readiness: app.BRKTRKAudioReadiness.snapshot(),
+      failures: app.BRKTRKProductionEngineHost.failureLogSnapshot?.(),
+      sound: doc.body.dataset.productionSoundState,
+    }));
     let peak = 0;
     for (let i = 0; i < 100; i++) {
       await sleep(30);
@@ -135,7 +141,7 @@
       result.dataset.diagnostics = JSON.stringify({ width, engine: modal.engineId, sha: modal.packageSha256,
         presetId, peakBefore, peakAfter });
       result.textContent = 'BRKTRK_BROWSER_TESTS_PASSED';
-    })().catch(error => { result.textContent = 'BRKTRK_BROWSER_TESTS_FAILED: ' + String(error?.stack ?? error).slice(0, 1000); });
+    })().catch(error => { result.textContent = 'BRKTRK_BROWSER_TESTS_FAILED: ' + String(error?.stack ?? error).slice(0, 4000); });
   }, { once: true });
 })();
 </script>
