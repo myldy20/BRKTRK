@@ -144,5 +144,18 @@ then replaces Modal with POLY and back and verifies output again. The test
 checks exact engine SHA and preset identity after reopening. It does not publish
 the candidate, establish physical phone/audio acceptance, or test every preset.
 
-Public catalog release still requires the package-level release/source and
-provenance gates in issue #8; old private package identities must not be reused.
+## Public release package
+
+The new `1.1.1-brktrk2` archive is built from public BRKTRK sources and
+qualified before being locked in `release/engines/`. Its embedded
+`provenance/BUILD-SOURCE.md` points to the exact corresponding source commit,
+which remains an ancestor of the release. This is a new version and does not
+republish or relabel any old private archive.
+
+The catalog and package SHA are locked in `release/engines/catalog-lock.json`.
+`npm run build:store` verifies the hash, package internals, provenance and 34
+applicable presets, then copies the unchanged archive to the public store. CI
+rejects changes or removal of existing release entries and archive paths, and
+the compact Pages build exercises the locked archive in the actual browser UI.
+The catalog loads at startup; the package is fetched only on demand. Physical
+phone/audio acceptance and the remaining engine migrations are still open.

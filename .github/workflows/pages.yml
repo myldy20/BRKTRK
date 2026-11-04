@@ -31,10 +31,14 @@ jobs:
         run: npm test
       - name: Package verified local development synth
         run: npm run dev:engine
+      - name: Install locked public engine packages
+        run: node scripts/install-release-engine-store.mjs
       - name: Build compact public web app
         run: npm run build:web
       - name: Run Chromium startup smoke against deployed output
         run: BRKTRK_WEB_DIR=dist npm run test:browser
+      - name: Test locked Modal in the published build
+        run: node scripts/qualify-modal-project-journey.mjs --locked-dist
       - name: Verify Pages payload and engine catalog
         shell: bash
         run: |

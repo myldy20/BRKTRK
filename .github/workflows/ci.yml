@@ -28,6 +28,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
@@ -35,6 +36,13 @@ jobs:
         run: npm test
       - name: Verify Modal qualification scope detection
         run: bash scripts/test-modal-ci-scope.sh
+      - name: Verify release immutability guard
+        run: node scripts/test-release-immutability.mjs
+      - name: Protect published engine package identities
+        if: github.event_name == 'pull_request'
+        env:
+          BRKTRK_IMMUTABILITY_BASE: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-release-immutability.mjs
       - name: Build and test migrated GPL BRK Modal native DSP
         shell: bash
         run: |
@@ -69,10 +77,14 @@ jobs:
         run: bash scripts/build-modal-factory-presets.sh
       - name: Build local developer engine
         run: npm run dev:engine
+      - name: Install locked public engine packages
+        run: node scripts/install-release-engine-store.mjs
       - name: Build compact public web app
         run: npm run build:web
       - name: Chromium first-run against compact build
         run: BRKTRK_WEB_DIR=dist npm run test:browser
+      - name: Exercise locked Modal in compact public build
+        run: node scripts/qualify-modal-project-journey.mjs --locked-dist
 
   modal_wasm:
     # Decide from changed files, never from the editable PR title. Even host
@@ -136,6 +148,39 @@ jobs:
       - name: Qualify Modal project playback and reopen on desktop and mobile
         if: steps.scope.outputs.qualify == 'true'
         run: node scripts/qualify-modal-project-journey.mjs
+      - name: Build versioned Modal release candidate
+        if: steps.scope.outputs.qualify == 'true'
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if test -f release/engines/catalog-lock.json; then
+            # An existing version is always re-tested from its exact locked bytes.
+            node scripts/stage-locked-modal-release.mjs
+          else
+            # Pin the actual source commit, not the temporary PR merge ref.
+            git diff --quiet "$SOURCE_SHA" HEAD --
+            python3 scripts/build-modal-candidate-package.py --release --repo . \
+              --wasm-dir build/brk-modal-wasm --presets build/brk-modal-factory/presets \
+              --descriptor-fixture build/brk-modal-candidate/parameters.bin \
+              --output-dir build/brk-modal-release/output --head-sha "$SOURCE_SHA"
+          fi
+          node scripts/test-modal-candidate-package.cjs build/brk-modal-release/output
+      - name: Qualify release candidate in real production Worklet
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-production-worklet.mjs build/brk-modal-release/output
+      - name: Qualify release candidate project journey
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-project-journey.mjs build/brk-modal-release/output
+      - name: Retain qualified Modal release candidate
+        if: steps.scope.outputs.qualify == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualified-modal-release
+          path: build/brk-modal-release/output/
+          if-no-files-found: error
+          retention-days: 7
       - name: Verify no public catalog or package was modified
         if: steps.scope.outputs.qualify == 'true'
         shell: bash

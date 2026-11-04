@@ -8,7 +8,9 @@
   const result = document.querySelector('#result');
   const frame = document.querySelector('#app');
   const width = Number(new URL(location.href).searchParams.get('width'));
+  const channel = new URL(location.href).searchParams.get('channel') || 'preview';
   if (![1210, 390].includes(width)) throw Error('invalid test width');
+  if (!['preview', 'stable'].includes(channel)) throw Error('invalid test channel');
   frame.width = width;
   frame.height = width === 390 ? 844 : 828;
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -68,11 +70,11 @@
       stage('BOOT_' + width);
       let { app, doc, project, session } = await ready();
       const entries = await app.BRKTRKProductionEngineHost.refreshCatalog();
-      const modal = entries.find(e => e.engineId === 'brk-modal' && e.channel === 'preview');
+      const modal = entries.find(e => e.engineId === 'brk-modal' && e.channel === channel);
       assert(modal, 'test-only Modal candidate missing');
       const view = await app.BRKTRKProductionEngineHost.ensurePackageView({
         moduleId: modal.moduleId, engineId: modal.engineId,
-        requestedVersion: modal.version, channel: 'preview',
+        requestedVersion: modal.version, channel,
       });
       assert(view.entry.packageSha256 === modal.packageSha256 && view.parameters.length === 89,
         'Modal package verification or descriptors failed');

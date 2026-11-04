@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Produce a nonpublished immutable Modal package using only BRKTRK sources.
+"""Produce an immutable Modal package using only BRKTRK sources.
 
 The outer SHA belongs to the ephemeral catalog entry, never to the package
 manifest itself. This command cannot update web/engines or Pages.
@@ -17,7 +17,8 @@ from pathlib import Path
 
 MODULE = "design.myldy.brk-modal"
 ENGINE = "brk-modal"
-VERSION = "1.1.1-brktrk1"
+CANDIDATE_VERSION = "1.1.1-brktrk1"
+RELEASE_VERSION = "1.1.1-brktrk2"
 HOST = "brk-synth-host-v1"
 PROFILE = "brksynth-integration-ready-v1"
 
@@ -100,7 +101,9 @@ def main() -> None:
     ap.add_argument("--descriptor-fixture", type=Path, required=True)
     ap.add_argument("--output-dir", type=Path, required=True)
     ap.add_argument("--head-sha", required=True)
+    ap.add_argument("--release", action="store_true", help="stage a new release version outside the public web tree")
     args = ap.parse_args()
+    version = RELEASE_VERSION if args.release else CANDIDATE_VERSION
     if len(args.head_sha) != 40 or any(c not in "0123456789abcdef" for c in args.head_sha):
         raise ValueError("candidate source must be an exact 40-byte Git SHA")
     if args.output_dir.resolve().is_relative_to((args.repo / "web").resolve()):
@@ -109,8 +112,8 @@ def main() -> None:
     engine = json.loads((args.repo / "engines/brk-modal/brk-engine.json").read_text("utf-8"))
     if (engine["moduleId"], engine["engineId"], engine["version"]) != (MODULE, ENGINE, "1.1.0"):
         raise ValueError("locked source descriptor lineage changed")
-    engine["version"] = VERSION
-    engine["candidateBuiltFromHead"] = args.head_sha
+    engine["version"] = version
+    engine["builtFromHead"] = args.head_sha
     params = parameter_records(args.descriptor_fixture, ui)
     state_index = json.loads((args.presets / "index.json").read_text("utf-8"))
     if state_index.get("presetCount") != 34:
@@ -132,6 +135,17 @@ def main() -> None:
         "provenance/PROVENANCE.yml": (args.repo / "engines/brk-modal/PROVENANCE.yml").read_bytes(),
         "provenance/LICENSE.txt": (args.repo / "LICENSE").read_bytes(),
         "provenance/FACTORY-SOURCE.md": (args.repo / "engines/brk-modal/upstream-factory/README.md").read_bytes(),
+        "provenance/BUILD-SOURCE.md": (
+            "# BRK Modal corresponding source\n\n"
+            f"Exact BRKTRK source revision: {args.head_sha}\n\n"
+            f"https://github.com/myldy20/BRKTRK/tree/{args.head_sha}\n\n"
+            "Source: `engines/brk-modal/` and `abi/`; build and packaging: "
+            "`scripts/build-modal-wasm.sh`, `scripts/build-modal-factory-presets.sh`, "
+            "`scripts/build-modal-candidate-package.py` and their referenced scripts. "
+            "The pinned Emscripten SDK is 4.0.23. BRK Modal is a modified GPLv3 "
+            "RipplerX work; details and change history are in PROVENANCE.md "
+            "and the dated repository history at the revision above.\n"
+        ).encode("utf-8"),
     }
     for row in records:
         relative = row["stateFile"]
@@ -145,7 +159,7 @@ def main() -> None:
     digest_input = "".join(f"{name}\0{len(data)}\0{sha(data)}\n" for name, data in ordered).encode("utf-8")
     manifest = {
         "schema": "brk-engine-package-v1",
-        "moduleId": MODULE, "engineId": ENGINE, "version": VERSION,
+        "moduleId": MODULE, "engineId": ENGINE, "version": version,
         "displayName": "BRK Modal",
         "hostContract": {"id": HOST, "minVersion": 1, "maxVersion": 1},
         "abiVersion": 65536, "stateSchemaVersion": 65536, "stateBytes": 768,
@@ -173,20 +187,20 @@ def main() -> None:
         },
         "contentSha256": sha(digest_input),
         "artifacts": [{"path": p, "bytes": len(data), "sha256": sha(data)} for p, data in ordered],
-        "candidateOnly": True,
+        "candidateOnly": not args.release,
         "source": {
             "repository": "myldy20/BRKTRK", "commit": args.head_sha,
             "license": "GPL-3.0-only", "modifiedFrom": "RipplerX 1.5.18",
         },
     }
     artifacts["brk-package.json"] = json_bytes(manifest)
-    archive = make_archive(artifacts, f"{ENGINE}-{VERSION}")
+    archive = make_archive(artifacts, f"{ENGINE}-{version}")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    name = f"{ENGINE}-{VERSION}.tar.gz"
+    name = f"{ENGINE}-{version}.tar.gz"
     (args.output_dir / name).write_bytes(archive)
     row = {
-        "moduleId": MODULE, "engineId": ENGINE, "version": VERSION,
-        "channel": "preview", "status": "active",
+        "moduleId": MODULE, "engineId": ENGINE, "version": version,
+        "channel": "stable" if args.release else "preview", "status": "active",
         "hostContract": {"id": HOST, "minVersion": 1, "maxVersion": 1},
         "hostCompatibility": {"profile": PROFILE, "source": "package-manifest"},
         "abiVersion": 65536, "stateSchemaVersion": 65536,
