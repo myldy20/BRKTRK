@@ -1,0 +1,133 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>BRK Modal project journey</title>
+<strong id="result">BRKTRK_BROWSER_TESTS_PENDING</strong>
+<iframe id="app" title="BRKTRK" style="border:0" src="./index.html?engineChannel=preview"></iframe>
+<script>
+(() => {
+  const result = document.querySelector('#result');
+  const frame = document.querySelector('#app');
+  const width = Number(new URL(location.href).searchParams.get('width'));
+  if (![1210, 390].includes(width)) throw Error('invalid test width');
+  frame.width = width;
+  frame.height = width === 390 ? 844 : 828;
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const stage = name => { result.textContent = 'BRKTRK_BROWSER_TESTS_STAGE: ' + name; };
+  const assert = (value, message) => { if (!value) throw Error(message); };
+  async function until(fn, message, attempts = 240) {
+    for (let i = 0; i < attempts; i++) {
+      const value = fn();
+      if (value) return value;
+      await sleep(50);
+    }
+    throw Error(message);
+  }
+  async function ready() {
+    const app = frame.contentWindow, doc = frame.contentDocument;
+    await until(() => doc?.body?.dataset?.bootstrapInput === 'ready'
+      && app?.BRKTRKStores?.project?.getState && app?.BRKTRKProductionEngineHost?.refreshCatalog,
+      'app did not reach editable bootstrap');
+    return { app, doc, project: app.BRKTRKStores.project, session: app.BRKTRKProjectFileSession };
+  }
+  async function audioEvidence(app, doc) {
+    await app.BRKTRKAudioReadiness.ensureReady({ source: 'modal-project-journey' });
+    // The analyser taps the real product Worklet output and a zero-gain sink.
+    const audio = app.eval('audio');
+    const analyser = audio.context.createAnalyser();
+    analyser.fftSize = 2048;
+    const sink = audio.context.createGain();
+    sink.gain.value = 0;
+    audio.node.connect(analyser).connect(sink).connect(audio.context.destination);
+    const samples = new Float32Array(analyser.fftSize);
+    doc.querySelector('#playButton').click();
+    await until(() => app.BRKTRKStores.transport.runtime.isPlaying(), 'transport did not start');
+    let peak = 0;
+    for (let i = 0; i < 100; i++) {
+      await sleep(30);
+      analyser.getFloatTimeDomainData(samples);
+      for (const sample of samples) {
+        assert(Number.isFinite(sample), 'non-finite audio output');
+        peak = Math.max(peak, Math.abs(sample));
+      }
+    }
+    app.stopPlayback();
+    await until(() => app.BRKTRKStores.transport.runtime.snapshot().phase === 'stopped', 'transport did not stop');
+    audio.node.disconnect(analyser);
+    analyser.disconnect(); sink.disconnect();
+    assert(peak > 0.000001, 'Modal project produced no measurable audio');
+    return peak;
+  }
+  frame.addEventListener('load', () => {
+    void (async () => {
+      stage('BOOT_' + width);
+      let { app, doc, project, session } = await ready();
+      const entries = await app.BRKTRKProductionEngineHost.refreshCatalog();
+      const modal = entries.find(e => e.engineId === 'brk-modal' && e.channel === 'preview');
+      assert(modal, 'test-only Modal candidate missing');
+      const view = await app.BRKTRKProductionEngineHost.ensurePackageView({
+        moduleId: modal.moduleId, engineId: modal.engineId,
+        requestedVersion: modal.version, channel: 'preview',
+      });
+      assert(view.entry.packageSha256 === modal.packageSha256 && view.parameters.length === 89,
+        'Modal package verification or descriptors failed');
+      assert(view.presets?.presets?.length === 34, 'Modal factory bank not available');
+      doc.querySelector('[data-panel="sound"]').click();
+      app.BRKTRKSoundEditRenderer.renderProductionSurface();
+      stage('CREATE_' + width);
+      const selector = await until(() => doc.querySelector('#instrumentInspector select[aria-label="Production synth engine"]'), 'engine selector missing');
+      const modalIndex = app.BRKTRKProductionEngineHost.catalogCandidates().findIndex(c => c.entry.engineId === 'brk-modal');
+      assert(modalIndex >= 0 && [...selector.options].some(o => o.value === String(modalIndex) && !o.disabled), 'Modal not selectable');
+      selector.value = String(modalIndex);
+      selector.dispatchEvent(new app.Event('change', { bubbles: true }));
+      doc.querySelector('#instrumentInspector .a4a-create-panel button').click();
+      await until(() => project.getState().instrumentPool?.[0]?.engineRef?.resolvedPackageSha256 === modal.packageSha256,
+        'Modal creation failed: ' + (doc.querySelector('#statusLine')?.textContent ?? ''));
+      stage('PRESET_' + width);
+      const preset = await until(() => {
+        const el = doc.querySelector('#instrumentInspector select[aria-label="Production Instrument preset"]');
+        return el && el.options.length === 35 && !el.disabled ? el : null;
+      }, '34 factory presets not rendered');
+      const presetId = preset.options[1].value;
+      assert(presetId && !preset.options[1].disabled, 'first Modal preset is not selectable');
+      preset.value = presetId;
+      preset.dispatchEvent(new app.Event('change', { bubbles: true }));
+      await until(() => project.getState().instrumentPool[0]?.presetRef?.id === presetId, 'Modal preset failed to apply');
+      const edit = project.phraseSteps.replaceStep(0, 0,
+        { ...project.phraseSteps.read(0, 0), note: 60, velocity: 100, instrument: 0 }, { source: 'modal-project-journey' });
+      assert(edit.mutated || project.phraseSteps.read(0, 0).note === 60, 'could not enter Modal note');
+      stage('AUDIO_' + width);
+      const peakBefore = await audioEvidence(app, doc);
+      stage('SAVE_' + width);
+      if (session.snapshot().capabilities.directSave) {
+        app.showSaveFilePicker = async () => ({ name: 'modal.brktrk',
+          async createWritable() { return { async write() {}, async close() {} }; } });
+      }
+      app.HTMLAnchorElement.prototype.click = function () {};
+      const saved = await session.dispatch({ type: 'project.saveAs', source: 'modal-project-journey' });
+      assert(saved.ok && typeof saved.text === 'string', 'Save As failed');
+      const portable = saved.text;
+      const expected = JSON.stringify(app.BRKTRKProjectFileSessionDomain.canonicalProject(project.getState()));
+      stage('RELOAD_' + width);
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(Error('reload timed out')), 25000);
+        frame.addEventListener('load', () => { clearTimeout(timeout); resolve(); }, { once: true });
+        frame.src = './index.html?engineChannel=preview&modal-reload=1';
+      });
+      ({ app, doc, project, session } = await ready());
+      const opened = await session.dispatch({ type: 'project.open', force: true, source: 'modal-project-journey',
+        file: { text: portable, fileName: 'modal.brktrk', mode: 'upload' } });
+      assert(opened.ok, 'reopening Modal project failed');
+      const restored = project.getState();
+      assert(JSON.stringify(app.BRKTRKProjectFileSessionDomain.canonicalProject(restored)) === expected,
+        'project changed during save/reopen');
+      assert(restored.instrumentPool[0]?.engineRef?.resolvedPackageSha256 === modal.packageSha256
+        && restored.instrumentPool[0]?.presetRef?.id === presetId, 'engine pin or preset lost');
+      stage('REPLAY_' + width);
+      const peakAfter = await audioEvidence(app, doc);
+      result.dataset.diagnostics = JSON.stringify({ width, engine: modal.engineId, sha: modal.packageSha256,
+        presetId, peakBefore, peakAfter });
+      result.textContent = 'BRKTRK_BROWSER_TESTS_PASSED';
+    })().catch(error => { result.textContent = 'BRKTRK_BROWSER_TESTS_FAILED: ' + String(error?.stack ?? error).slice(0, 1000); });
+  }, { once: true });
+})();
+</script>

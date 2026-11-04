@@ -133,6 +133,9 @@ jobs:
       - name: Qualify verified Modal in production Chromium AudioWorklet
         if: steps.scope.outputs.qualify == 'true'
         run: node scripts/qualify-modal-production-worklet.mjs
+      - name: Qualify Modal project playback and reopen on desktop and mobile
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-project-journey.mjs
       - name: Verify no public catalog or package was modified
         if: steps.scope.outputs.qualify == 'true'
         shell: bash
