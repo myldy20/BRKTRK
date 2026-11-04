@@ -10,18 +10,26 @@ import { tmpdir } from 'node:os';
 const root = mkdtempSync(join(tmpdir(), 'brktrk-modal-project-'));
 let server;
 try {
-  cpSync('web', join(root, 'web'), { recursive: true });
-  mkdirSync(join(root, 'scripts'), { recursive: true });
-  cpSync('scripts/build-dev-engine-store.mjs', join(root, 'scripts/build-dev-engine-store.mjs'));
-  cpSync('engines/brk-dev-poly', join(root, 'engines/brk-dev-poly'), { recursive: true });
-  cpSync('engines/brk-dev-fm', join(root, 'engines/brk-dev-fm'), { recursive: true });
-  cpSync('LICENSE', join(root, 'LICENSE'));
-  cpSync('NOTICE.md', join(root, 'NOTICE.md'));
-  execFileSync(process.execPath, ['scripts/build-dev-engine-store.mjs'], { cwd: root });
+  const locked = process.argv[2] === '--locked-dist';
+  cpSync(locked ? 'dist' : 'web', join(root, 'web'), { recursive: true });
+  if (!locked) {
+    mkdirSync(join(root, 'scripts'), { recursive: true });
+    cpSync('scripts/build-dev-engine-store.mjs', join(root, 'scripts/build-dev-engine-store.mjs'));
+    cpSync('engines/brk-dev-poly', join(root, 'engines/brk-dev-poly'), { recursive: true });
+    cpSync('engines/brk-dev-fm', join(root, 'engines/brk-dev-fm'), { recursive: true });
+    cpSync('LICENSE', join(root, 'LICENSE'));
+    cpSync('NOTICE.md', join(root, 'NOTICE.md'));
+    execFileSync(process.execPath, ['scripts/build-dev-engine-store.mjs'], { cwd: root });
+  }
   cpSync('scripts/fixtures/modal-project-journey.html', join(root, 'web/modal-project-journey.html'));
-  const candidateDir = resolve(process.argv[2] || 'build/brk-modal-candidate/output');
-  const row = JSON.parse(readFileSync(join(candidateDir, 'candidate-entry.json'), 'utf8'));
-  const bytes = readFileSync(join(candidateDir, row.packageUrl.replace(/^\.\//, '')));
+  const candidateDir = locked ? null : resolve(process.argv[2] || 'build/brk-modal-candidate/output');
+  const row = locked
+    ? JSON.parse(readFileSync('release/engines/catalog-lock.json', 'utf8')).releases.find(r => r.entry.engineId === 'brk-modal')?.entry
+    : JSON.parse(readFileSync(join(candidateDir, 'candidate-entry.json'), 'utf8'));
+  if (!row) throw Error('Modal lock entry missing');
+  const bytes = readFileSync(locked
+    ? join(root, 'web/engines', row.packageUrl.replace(/^\.\//, ''))
+    : join(candidateDir, row.packageUrl.replace(/^\.\//, '')));
   if (row.engineId !== 'brk-modal' || !['preview', 'stable'].includes(row.channel)
       || createHash('sha256').update(bytes).digest('hex') !== row.packageSha256) {
     throw Error('Modal candidate identity or SHA mismatch');
@@ -32,7 +40,12 @@ try {
   row.packageUrl = './' + path;
   const catalogPath = join(root, 'web/engines/catalog-v1.json');
   const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
-  catalog.entries.push(row);
+  if (locked) {
+    if (!catalog.entries.some(e => e.moduleId === row.moduleId && e.engineId === row.engineId
+      && e.version === row.version && e.packageSha256 === row.packageSha256 && e.packageUrl === row.packageUrl)) {
+      throw Error('deployed catalog does not contain the locked Modal archive');
+    }
+  } else catalog.entries.push(row);
   writeFileSync(catalogPath, JSON.stringify(catalog));
   const web = join(root, 'web');
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',

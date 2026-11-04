@@ -6,13 +6,13 @@ This public-source candidate corresponds to Web 0.9.0. The original BRKTRK host 
 
 ## Play online
 
-Once this source is published and the Pages workflow succeeds, open [BRKTRK on GitHub Pages](https://myldy20.github.io/BRKTRK/). The browser runs the tracker locally and the deployed package includes the standalone BRK DEV POLY development synthesizer. Production engine packages are distributed separately and are not included in this public build.
+Open [BRKTRK on GitHub Pages](https://myldy20.github.io/BRKTRK/). The browser runs the tracker locally. Its catalog includes BRK DEV POLY, BRK DEV FM and the GPL BRK Modal physical-modeling engine. Engine packages load on demand and projects retain their exact package hash.
 
 ## Run it
 
 Requirements: Node.js 22+, Python 3, and a current Chromium browser.
 
-    npm run dev:engine
+    npm run build:store
     npm run serve
 
 To create the compact public artifact after generating the development engine:
@@ -25,7 +25,7 @@ GitHub Actions tests `dist/` in Chromium and deploys it to Pages.
 
 Open http://localhost:8080. Use a web server: opening web/index.html directly does not provide the required secure browser origin.
 
-A first-party development synth package (BRK DEV POLY) is generated locally. Separately published production sound engine packages are not included. A project referring to unavailable packages must fail explicitly instead of silently replacing its engine.
+Development synth packages are generated locally; the public Modal package is copied from the locked release archive and verified before use. A project referring to an unavailable package must fail explicitly instead of silently replacing its engine.
 
 ## Test
 
@@ -36,6 +36,6 @@ Public CI runs on isolated GitHub-hosted Linux runners with read-only repository
 
 BRKTRK remains under active development. Export musical projects frequently and keep backups. See CONTRIBUTING.md, docs/README.md and MIGRATION.md.
 
-The Chromium smoke requires a local `google-chrome` binary after `npm run dev:engine`.
+The Chromium smoke requires a local `google-chrome` binary after `npm run build:store`.
 It checks actual browser bootstrap, both desktop/narrow viewports, and the
 hash-verified development engine package. See [Browser Smoke](docs/BROWSER_SMOKE.md).

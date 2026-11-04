@@ -1,0 +1,29 @@
+{
+  "schema": "brktrk-release-engine-lock-v1",
+  "releases": [
+    {
+      "entry": {
+        "abiVersion": 65536,
+        "channel": "stable",
+        "engineId": "brk-modal",
+        "hostCompatibility": {
+          "profile": "brksynth-integration-ready-v1",
+          "source": "package-manifest"
+        },
+        "hostContract": {
+          "id": "brk-synth-host-v1",
+          "maxVersion": 1,
+          "minVersion": 1
+        },
+        "moduleId": "design.myldy.brk-modal",
+        "packageSha256": "3b81473ad8fba7d02167bad9112dc0cd05b3eda49f90ba1ac11adad7b5a7e21a",
+        "packageUrl": "./packages/design.myldy.brk-modal/brk-modal/1.1.1-brktrk2.tar.gz",
+        "parameterSchemaVersion": 1,
+        "stateSchemaVersion": 65536,
+        "status": "active",
+        "version": "1.1.1-brktrk2"
+      },
+      "sourceCommit": "f607f2adcef23a97967fa3a61cbbcdd557c46ed1"
+    }
+  ]
+}
