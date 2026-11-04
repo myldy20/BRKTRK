@@ -135,6 +135,17 @@ def main() -> None:
         "provenance/PROVENANCE.yml": (args.repo / "engines/brk-modal/PROVENANCE.yml").read_bytes(),
         "provenance/LICENSE.txt": (args.repo / "LICENSE").read_bytes(),
         "provenance/FACTORY-SOURCE.md": (args.repo / "engines/brk-modal/upstream-factory/README.md").read_bytes(),
+        "provenance/BUILD-SOURCE.md": (
+            "# BRK Modal corresponding source\n\n"
+            f"Exact BRKTRK source revision: {args.head_sha}\n\n"
+            f"https://github.com/myldy20/BRKTRK/tree/{args.head_sha}\n\n"
+            "Source: `engines/brk-modal/` and `abi/`; build and packaging: "
+            "`scripts/build-modal-wasm.sh`, `scripts/build-modal-factory-presets.sh`, "
+            "`scripts/build-modal-candidate-package.py` and their referenced scripts. "
+            "The pinned Emscripten SDK is 4.0.23. BRK Modal is a modified GPLv3 "
+            "RipplerX work; details and change history are in PROVENANCE.md "
+            "and the dated repository history at the revision above.\n"
+        ).encode("utf-8"),
     }
     for row in records:
         relative = row["stateFile"]
