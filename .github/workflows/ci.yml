@@ -159,12 +159,38 @@ jobs:
       - name: Qualify Bogie in real tracker on desktop and mobile
         if: steps.scope.outputs.qualify == 'true'
         run: node scripts/qualify-modal-project-journey.mjs --bogie
+      - name: Build or restage immutable Bogie release candidate
+        if: steps.scope.outputs.qualify == 'true'
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if python3 -c "import json,sys; sys.exit(not any(r['entry']['engineId']=='brk-bogie' for r in json.load(open('release/engines/catalog-lock.json'))['releases']))"; then
+            node scripts/stage-locked-bogie-release.mjs
+          else
+            git diff --quiet "$SOURCE_SHA" HEAD --
+            python3 scripts/build-bogie-candidate-package.py --release --wasm-dir build/brk-bogie-wasm \
+              --output-dir build/brk-bogie-release/output --head-sha "$SOURCE_SHA"
+          fi
+          node scripts/test-bogie-candidate-package.cjs build/brk-bogie-release/output
+      - name: Qualify exact Bogie release candidate in browser
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-project-journey.mjs --bogie build/brk-bogie-release/output
       - name: Retain Bogie qualification candidate
         if: steps.scope.outputs.qualify == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qualified-bogie-candidate
           path: build/brk-bogie-candidate/output/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain qualified Bogie release archive
+        if: steps.scope.outputs.qualify == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualified-bogie-release
+          path: build/brk-bogie-release/output/
           if-no-files-found: error
           retention-days: 7
       - name: Build unpublished SHA-pinned Modal package and verify real production loader

@@ -10,7 +10,8 @@ from pathlib import Path
 
 MODULE = 'design.myldy.brk-bogie'
 ENGINE = 'brk-bogie'
-VERSION = '0.1.0-brktrk1'
+CANDIDATE_VERSION = '0.1.0-brktrk1'
+RELEASE_VERSION = '0.1.0-brktrk2'
 
 
 def sha(data):
@@ -26,7 +27,9 @@ def main():
     parser.add_argument('--wasm-dir', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--head-sha', required=True)
+    parser.add_argument('--release', action='store_true')
     args = parser.parse_args()
+    version = RELEASE_VERSION if args.release else CANDIDATE_VERSION
     if len(args.head_sha) != 40 or any(c not in '0123456789abcdef' for c in args.head_sha):
         raise ValueError('source revision must be an exact lowercase Git SHA')
     if args.output_dir.resolve().is_relative_to(Path('web').resolve()):
@@ -37,7 +40,10 @@ def main():
     ui = json.loads((root / 'brk-ui.json').read_text())
     if (engine['moduleId'], engine['engineId'], engine['license']) != (MODULE, ENGINE, 'GPL-3.0-only'):
         raise ValueError('unexpected engine identity or license')
-    engine['version'] = VERSION
+    engine['version'] = version
+    engine['status'] = 'alpha-release' if args.release else 'alpha-preview-candidate'
+    engine['package']['version'] = version
+    engine['package']['status'] = 'stable-release' if args.release else 'preview-candidate'
     rows = registry['parameters']
     if len(rows) != 8 or len({p['id'] for p in rows}) != 8 or len({p['key'] for p in rows}) != 8:
         raise ValueError('expected eight unique Bogie parameter identities')
@@ -71,7 +77,7 @@ def main():
     content_hash = sha(''.join(f'{p}\0{len(b)}\0{sha(b)}\n' for p, b in ordered).encode())
     manifest = {
         'schema': 'brk-engine-package-v1', 'moduleId': MODULE, 'engineId': ENGINE,
-        'version': VERSION, 'displayName': 'BRK BOGIE',
+        'version': version, 'displayName': 'BRK BOGIE',
         'hostContract': {'id': 'brk-synth-host-v1', 'minVersion': 1, 'maxVersion': 1},
         'abiVersion': 65536, 'stateSchemaVersion': 65536, 'stateBytes': 120,
         'parameterSchemaVersion': 1, 'builtFromHead': args.head_sha,
@@ -83,14 +89,14 @@ def main():
         'descriptors': {'engine': 'descriptors/engine.json', 'ui': 'descriptors/ui.json',
             'parameters': 'descriptors/parameters.json'},
         'artifacts': [{'path': p, 'bytes': len(b), 'sha256': sha(b)} for p, b in ordered],
-        'contentSha256': content_hash, 'candidateOnly': True,
+        'contentSha256': content_hash, 'candidateOnly': not args.release,
         'source': {'repository': 'myldy20/BRKTRK', 'commit': args.head_sha, 'license': 'GPL-3.0-only'},
     }
     artifacts['brk-package.json'] = encode(manifest)
     uncompressed = io.BytesIO()
     with tarfile.open(fileobj=uncompressed, mode='w', format=tarfile.PAX_FORMAT) as tar:
         for path, data in sorted(artifacts.items()):
-            info = tarfile.TarInfo(f'{ENGINE}-{VERSION}/{path}')
+            info = tarfile.TarInfo(f'{ENGINE}-{version}/{path}')
             info.size, info.mode, info.mtime, info.uid, info.gid = len(data), 0o644, 0, 0, 0
             info.uname = info.gname = ''
             tar.addfile(info, io.BytesIO(data))
@@ -99,9 +105,9 @@ def main():
         out.write(uncompressed.getvalue())
     archive = compressed.getvalue()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    name = f'{ENGINE}-{VERSION}.tar.gz'
+    name = f'{ENGINE}-{version}.tar.gz'
     (args.output_dir / name).write_bytes(archive)
-    entry = {'moduleId': MODULE, 'engineId': ENGINE, 'version': VERSION, 'channel': 'preview', 'status': 'active',
+    entry = {'moduleId': MODULE, 'engineId': ENGINE, 'version': version, 'channel': 'stable' if args.release else 'preview', 'status': 'active',
         'hostContract': manifest['hostContract'],
         'hostCompatibility': {'profile': 'brksynth-integration-ready-v1', 'source': 'package-manifest'},
         'abiVersion': 65536, 'stateSchemaVersion': 65536, 'parameterSchemaVersion': 1,
