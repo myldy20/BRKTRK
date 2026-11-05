@@ -92,6 +92,8 @@ jobs:
         run: BRKTRK_WEB_DIR=dist npm run test:browser
       - name: Exercise locked Modal in compact public build
         run: node scripts/qualify-modal-project-journey.mjs --locked-dist
+      - name: Exercise locked Bogie in compact public build
+        run: node scripts/qualify-modal-project-journey.mjs --locked-bogie-dist
 
   modal_wasm:
     # Decide from changed files, never from the editable PR title. Even host

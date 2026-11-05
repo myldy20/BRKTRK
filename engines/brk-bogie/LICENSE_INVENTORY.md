@@ -12,4 +12,6 @@ changes only its include path for the vendored layout.
 
 The source was migrated from BRKSNTH_private main
 `70d7244895591d1db6c25afaead7009353a0e4bb`; the original preview binary is not
-republished. A new package requires its own build and host verification.
+republished. The new `0.1.0-brktrk2` package is independently built and
+qualified in BRKTRK; its exact source revision and archive SHA are recorded in
+the immutable release catalog.

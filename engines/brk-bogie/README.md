@@ -14,6 +14,7 @@ Automation semantics: continuous parameter edits update active one-shot voices a
 
 Current P1 surface: canonical 120-byte state v1, BRK Synth ABI v1, fixed eight-instance module runtime, native ABI tests, fixed-memory 4 MiB Emscripten targets, descriptor-driven UI metadata and deterministic `brk-engine-package-v1` preview tooling.
 
-The engine is not yet published in the BRKTRK catalog. It requires a new
-source-built package and real browser qualification before release. The
+The public BRKTRK catalog includes the independently built and verified
+`0.1.0-brktrk2` package with 12 selectable models. This release has no factory
+preset bank: choose a model and adjust the eight controls in Sound. The
 original private preview binary is not republished. See LICENSE_INVENTORY.md.

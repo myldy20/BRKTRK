@@ -24,6 +24,30 @@
         "version": "1.1.1-brktrk2"
       },
       "sourceCommit": "f607f2adcef23a97967fa3a61cbbcdd557c46ed1"
+    },
+    {
+      "entry": {
+        "abiVersion": 65536,
+        "channel": "stable",
+        "engineId": "brk-bogie",
+        "hostCompatibility": {
+          "profile": "brksynth-integration-ready-v1",
+          "source": "package-manifest"
+        },
+        "hostContract": {
+          "id": "brk-synth-host-v1",
+          "maxVersion": 1,
+          "minVersion": 1
+        },
+        "moduleId": "design.myldy.brk-bogie",
+        "packageSha256": "d639c9914adca346a070f1edb22460fc1b1bb9c2f9f256fd3490429764aad81e",
+        "packageUrl": "./packages/design.myldy.brk-bogie/brk-bogie/0.1.0-brktrk2.tar.gz",
+        "parameterSchemaVersion": 1,
+        "stateSchemaVersion": 65536,
+        "status": "active",
+        "version": "0.1.0-brktrk2"
+      },
+      "sourceCommit": "dfd53b08d4508e0d7b5f6fe2bc7abe7278b6250e"
     }
   ]
 }

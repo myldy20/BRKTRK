@@ -10,8 +10,8 @@ import { tmpdir } from 'node:os';
 const root = mkdtempSync(join(tmpdir(), 'brktrk-modal-project-'));
 let server;
 try {
-  const locked = process.argv[2] === '--locked-dist';
-  const bogie = process.argv[2] === '--bogie';
+  const locked = ['--locked-dist', '--locked-bogie-dist'].includes(process.argv[2]);
+  const bogie = ['--bogie', '--locked-bogie-dist'].includes(process.argv[2]);
   const engineId = bogie ? 'brk-bogie' : 'brk-modal';
   const fixture = bogie ? 'bogie-project-journey.html' : 'modal-project-journey.html';
   cpSync(locked ? 'dist' : 'web', join(root, 'web'), { recursive: true });
@@ -27,7 +27,7 @@ try {
   cpSync('scripts/fixtures/' + fixture, join(root, 'web', fixture));
   const candidateDir = locked ? null : resolve(bogie ? (process.argv[3] || 'build/brk-bogie-candidate/output') : (process.argv[2] || 'build/brk-modal-candidate/output'));
   const row = locked
-    ? JSON.parse(readFileSync('release/engines/catalog-lock.json', 'utf8')).releases.find(r => r.entry.engineId === 'brk-modal')?.entry
+    ? JSON.parse(readFileSync('release/engines/catalog-lock.json', 'utf8')).releases.find(r => r.entry.engineId === engineId)?.entry
     : JSON.parse(readFileSync(join(candidateDir, 'candidate-entry.json'), 'utf8'));
   if (!row) throw Error('Modal lock entry missing');
   const bytes = readFileSync(locked
