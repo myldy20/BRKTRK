@@ -39,6 +39,8 @@ jobs:
         run: BRKTRK_WEB_DIR=dist npm run test:browser
       - name: Test locked Modal in the published build
         run: node scripts/qualify-modal-project-journey.mjs --locked-dist
+      - name: Test locked Bogie in the published build
+        run: node scripts/qualify-modal-project-journey.mjs --locked-bogie-dist
       - name: Verify Pages payload and engine catalog
         shell: bash
         run: |

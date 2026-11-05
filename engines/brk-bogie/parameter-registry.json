@@ -1,0 +1,17 @@
+{
+  "schema": "brk-bogie-parameter-registry-v1",
+  "status": "frozen-alpha",
+  "frozenAt": "2026-10-05",
+  "parameterSchemaVersion": 1,
+  "identityRule": "numeric ID + UTF-8 key are permanent; removed IDs are tombstoned and never reused",
+  "parameters": [
+    {"id":256,"hex":"0x0100","key":"model","name":"Model","group":"source","type":"enum","values":["Kick","Snare","Hat","Clap","Tom","Rim","FM","Noise","Cowbell","Cymbal","Shaker","Clave"],"defaultNormalized":0.0,"automation":"control","modulatable":false},
+    {"id":257,"hex":"0x0101","key":"decay","name":"Decay","group":"shape","type":"continuous","range":[0,1],"defaultNormalized":0.5,"automation":"sample","modulatable":true},
+    {"id":258,"hex":"0x0102","key":"tone","name":"Tone","group":"shape","type":"continuous","range":[0,1],"defaultNormalized":0.5,"automation":"sample","modulatable":true},
+    {"id":259,"hex":"0x0103","key":"sweep","name":"Sweep","group":"shape","type":"continuous","range":[0,1],"defaultNormalized":0.25,"automation":"sample","modulatable":true},
+    {"id":260,"hex":"0x0104","key":"noise","name":"Noise","group":"shape","type":"continuous","range":[0,1],"defaultNormalized":0.25,"automation":"sample","modulatable":true},
+    {"id":261,"hex":"0x0105","key":"fm","name":"FM","group":"shape","type":"continuous","range":[0,1],"defaultNormalized":0.25,"automation":"sample","modulatable":true},
+    {"id":512,"hex":"0x0200","key":"drive","name":"Drive","group":"output","type":"continuous","range":[0,1],"defaultNormalized":0.125,"automation":"sample","modulatable":true},
+    {"id":513,"hex":"0x0201","key":"level","name":"Level","group":"output","type":"continuous","range":[0,1],"defaultNormalized":0.8,"automation":"sample","modulatable":true}
+  ]
+}

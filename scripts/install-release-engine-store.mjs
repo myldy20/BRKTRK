@@ -39,13 +39,18 @@ for (const release of lock.releases) {
   if (parsed.manifest.candidateOnly !== false || parsed.manifest.source?.commit !== release.sourceCommit
       || parsed.manifest.source?.repository !== 'myldy20/BRKTRK'
       || parsed.manifest.source?.license !== 'GPL-3.0-only') throw Error('unqualified release provenance');
-  for (const file of ['provenance/PROVENANCE.md', 'provenance/LICENSE.txt', 'provenance/BUILD-SOURCE.md']) {
+  for (const file of ['provenance/PROVENANCE.yml', 'provenance/LICENSE.txt', 'provenance/BUILD-SOURCE.md']) {
     if (!parsed.files[file]?.length) throw Error('release notice missing: ' + file);
   }
   if (entry.engineId === 'brk-modal') {
     const library = globalThis.BRKTRKEnginePresetDomain.createLibrary(loaded);
     if (loaded.manifest.parameters.length !== 89 || library.presetCount !== 34
         || library.presets.some(p => !p.applicable)) throw Error('Modal release is incomplete');
+  }
+  if (entry.engineId === 'brk-bogie') {
+    if (loaded.manifest.parameters.length !== 8
+        || loaded.manifest.parameters.find(p => p.key === 'model')?.values?.length !== 12
+        || !parsed.files['provenance/UPSTREAM-MIT.txt']?.length) throw Error('Bogie release is incomplete');
   }
   const destination = join('web/engines', path);
   mkdirSync(dirname(destination), { recursive: true });
