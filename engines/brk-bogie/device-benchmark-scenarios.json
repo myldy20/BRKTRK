@@ -1,0 +1,18 @@
+{
+  "schema": "brk-device-benchmark-scenarios-v1",
+  "engineId": "brk-bogie",
+  "sampleRate": 48000,
+  "blockFrames": 128,
+  "claimBoundary": "structural CI scenarios; not representative-phone acceptance",
+  "scenarios": [
+    {"id":"one-kick","instances":1,"voicesPerInstance":1,"model":"Kick"},
+    {"id":"eight-cymbals","instances":1,"voicesPerInstance":8,"model":"Cymbal"},
+    {"id":"eight-instances","instances":8,"voicesPerInstance":1,"model":"Kick"},
+    {"id":"live-eight-param-ui","instances":1,"voicesPerInstance":4,"model":"Snare","automation":"continuous-parameter-ramps"}
+  ],
+  "targetGates": {
+    "browser": "generic-host-and-real-audioworklet-conformance-required",
+    "referencePhone": "pending-physical-device-measurement",
+    "trimui": "pending-if-enabled-in-product"
+  }
+}

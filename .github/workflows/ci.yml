@@ -52,6 +52,13 @@ jobs:
           /tmp/brktrk-modal-build/brk_modal_tests
           /tmp/brktrk-modal-build/brk_modal_state_v1_tests
           /tmp/brktrk-modal-build/brk_modal_parameter_descriptor_tests
+      - name: Build and test BRK Bogie native engine and ABI
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S engines/brk-bogie -B /tmp/brktrk-bogie -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/brktrk-bogie --parallel 2
+          ctest --test-dir /tmp/brktrk-bogie --output-on-failure
       - name: Build and test GPL BRK Modal ABI adapter (native)
         shell: bash
         run: |
@@ -138,6 +145,28 @@ jobs:
       - name: Qualify the real Chrome AudioWorklet environment
         if: steps.scope.outputs.qualify == 'true'
         run: node scripts/qualify-modal-audioworklet.mjs
+      - name: Build and verify Bogie WASM candidate
+        if: steps.scope.outputs.qualify == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh" >/dev/null
+          emcmake cmake -S engines/brk-bogie -B build/brk-bogie-wasm -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/brk-bogie-wasm --parallel 2 --target brk_bogie_wasm
+          python3 scripts/build-bogie-candidate-package.py --wasm-dir build/brk-bogie-wasm \
+            --output-dir build/brk-bogie-candidate/output --head-sha "$(git rev-parse HEAD)"
+          node scripts/test-bogie-candidate-package.cjs
+      - name: Qualify Bogie in real tracker on desktop and mobile
+        if: steps.scope.outputs.qualify == 'true'
+        run: node scripts/qualify-modal-project-journey.mjs --bogie
+      - name: Retain Bogie qualification candidate
+        if: steps.scope.outputs.qualify == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualified-bogie-candidate
+          path: build/brk-bogie-candidate/output/
+          if-no-files-found: error
+          retention-days: 7
       - name: Build unpublished SHA-pinned Modal package and verify real production loader
         if: steps.scope.outputs.qualify == 'true'
         shell: bash

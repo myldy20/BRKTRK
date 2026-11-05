@@ -1,0 +1,33 @@
+engine_id: brk-bogie
+module_id: design.myldy.brk-bogie
+classification: permissive-third-party-derived
+copyright_holder: Myldy design / Ilya Tolstoukhov for BRK adapter; upstream notice retained
+source_license: GPL-3.0-only for BRK adapter; MIT for upstream donor
+binary_license: GPL-3.0-only
+created_at: 2026-10-05
+created_from:
+  repositories:
+    - repository: paiheulevrai/choochoorack
+      commit: 8986ceff930044780d259128990c142595ecd87d
+      license_observed: MIT
+      use: standalone Bogie DSP core and upstream standalone test
+      paths_copied:
+        - ChooChooBogie/src/dsp/bogie_core.cpp
+        - ChooChooBogie/src/dsp/bogie_core.h
+        - ChooChooBogie/tests/bogie_core_test.cpp
+third_party:
+  code:
+    - name: Choo Choo Rack / Bogie
+      license: MIT
+      notice: third_party/choochoorack/LICENSE
+      copyright:
+        - Copyright (c) 2026 Pierre-Emmanuel Surga
+  assets: []
+implementation_notes:
+  - Standalone donor core is preferred over ChooChooTracker chipnomad_lib because it has no tracker Project/playback/UI/MIDI dependency.
+  - BRK-owned BogieEngine adds a fixed eight-voice performer boundary, note identity, bounded voice stealing, velocity/level mapping and the BRK Synth ABI v1 seam.
+  - Generic BRK Instrument/host layers own modulation/presentation rather than importing Choo tracker voice-post state.
+  - No allocation, blocking or I/O occurs in the process path.
+  - Migrated from BRKSNTH_private main 70d7244895591d1db6c25afaead7009353a0e4bb into GPL-3.0-only BRKTRK on 2026-11-05. Upstream donor remains MIT.
+  - The upstream standalone test changes only its include path to match the vendored layout.
+  - P1 freezes eight public parameters, canonical 120-byte state v1, generic ABI v1, fixed-memory WASM targets and descriptor-driven all-parameter UI metadata.

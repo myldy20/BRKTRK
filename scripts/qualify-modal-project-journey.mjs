@@ -11,6 +11,9 @@ const root = mkdtempSync(join(tmpdir(), 'brktrk-modal-project-'));
 let server;
 try {
   const locked = process.argv[2] === '--locked-dist';
+  const bogie = process.argv[2] === '--bogie';
+  const engineId = bogie ? 'brk-bogie' : 'brk-modal';
+  const fixture = bogie ? 'bogie-project-journey.html' : 'modal-project-journey.html';
   cpSync(locked ? 'dist' : 'web', join(root, 'web'), { recursive: true });
   if (!locked) {
     mkdirSync(join(root, 'scripts'), { recursive: true });
@@ -21,8 +24,8 @@ try {
     cpSync('NOTICE.md', join(root, 'NOTICE.md'));
     execFileSync(process.execPath, ['scripts/build-dev-engine-store.mjs'], { cwd: root });
   }
-  cpSync('scripts/fixtures/modal-project-journey.html', join(root, 'web/modal-project-journey.html'));
-  const candidateDir = locked ? null : resolve(process.argv[2] || 'build/brk-modal-candidate/output');
+  cpSync('scripts/fixtures/' + fixture, join(root, 'web', fixture));
+  const candidateDir = locked ? null : resolve(bogie ? (process.argv[3] || 'build/brk-bogie-candidate/output') : (process.argv[2] || 'build/brk-modal-candidate/output'));
   const row = locked
     ? JSON.parse(readFileSync('release/engines/catalog-lock.json', 'utf8')).releases.find(r => r.entry.engineId === 'brk-modal')?.entry
     : JSON.parse(readFileSync(join(candidateDir, 'candidate-entry.json'), 'utf8'));
@@ -30,7 +33,7 @@ try {
   const bytes = readFileSync(locked
     ? join(root, 'web/engines', row.packageUrl.replace(/^\.\//, ''))
     : join(candidateDir, row.packageUrl.replace(/^\.\//, '')));
-  if (row.engineId !== 'brk-modal' || !['preview', 'stable'].includes(row.channel)
+  if (row.engineId !== engineId || !['preview', 'stable'].includes(row.channel)
       || createHash('sha256').update(bytes).digest('hex') !== row.packageSha256) {
     throw Error('Modal candidate identity or SHA mismatch');
   }
@@ -66,7 +69,7 @@ try {
     let passed = false;
     for (let attempt = 1; attempt <= 2; attempt++) {
       const child = spawn(process.execPath, ['scripts/run-browser-cdp-fixture.mjs',
-        `http://127.0.0.1:${server.address().port}/modal-project-journey.html?width=${width}&channel=${row.channel}`,
+        `http://127.0.0.1:${server.address().port}/${fixture}?width=${width}&channel=${row.channel}`,
         join(root, `profile-${width}-${attempt}`), join(root, `chrome-${width}-${attempt}.stderr`)],
         { env: { ...process.env, BRKTRK_CDP_DISCOVERY_ATTEMPTS: '250' }, stdio: ['ignore', 'pipe', 'pipe'] });
       let out = '', err = '';

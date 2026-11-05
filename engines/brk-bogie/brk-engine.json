@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "status": "alpha-preview-candidate",
+  "moduleId": "design.myldy.brk-bogie",
+  "engineId": "brk-bogie",
+  "version": "0.1.0-alpha.2",
+  "name": "BRK BOGIE",
+  "vendor": "Myldy design / Choo Choo Rack contributors",
+  "kind": "instrument",
+  "license": "GPL-3.0-only",
+  "derivedFrom": "paiheulevrai/choochoorack@8986ceff930044780d259128990c142595ecd87d",
+  "hostContract": "brk-synth-host-v1",
+  "abi": {
+    "targetVersion": 65536,
+    "canonicalDocument": "docs/ABI_V1.md",
+    "canonicalHeader": "abi/include/brk_synth_abi.h",
+    "sameFrameOrder": ["reset","all-notes-off","choke","note-off","sustain","param-value","param-ramp","note-on","retrigger"],
+    "sustainCapability": false,
+    "sustainEventPolicy": "explicit-BRK_ERROR_UNSUPPORTED"
+  },
+  "output": {
+    "channelCount": 2,
+    "layout": "stereo-mirrored-mono-core",
+    "dryOnly": true,
+    "finiteGuard": true,
+    "signalOrder": "bogie-core->voice-velocity->voice-sum->level"
+  },
+  "models": {
+    "count": 12,
+    "values": ["Kick","Snare","Hat","Clap","Tom","Rim","FM","Noise","Cowbell","Cymbal","Shaker","Clave"]
+  },
+  "parameters": {
+    "count": 8,
+    "parameterSchemaVersion": 1,
+    "numericIdsFrozen": true,
+    "stableKeysFrozen": true,
+    "registry": "parameter-registry.json",
+    "sourceOfTruth": "include/brk_bogie/parameter_registry.hpp",
+    "ids": {
+      "model": 256,
+      "decay": 257,
+      "tone": 258,
+      "sweep": 259,
+      "noise": 260,
+      "fm": 261,
+      "drive": 512,
+      "level": 513
+    },
+    "genericModulationDestinations": ["decay","tone","sweep","noise","fm","drive","level"]
+  },
+  "state": {
+    "schemaVersion": 65536,
+    "schemaMajor": 1,
+    "schemaMinor": 0,
+    "byteSize": 120,
+    "parameterRecords": 8,
+    "crc32": true,
+    "atomicRestore": true,
+    "stoppedOnlyIo": true,
+    "sourceOfTruth": "include/brk_bogie/state_v1.hpp"
+  },
+  "runtime": {
+    "maxPolyphony": 8,
+    "maxModuleInstances": 8,
+    "fixedVoicePool": true,
+    "processHeapAllocation": false,
+    "deterministicSeed": true,
+    "wasmInitialMemoryBytes": 4194304,
+    "wasmMaximumMemoryBytes": 4194304,
+    "memoryGrowth": false,
+    "engineSpecificAudioWorklet": false,
+    "audioWorkletOwnership": "generic-brksynth-host",
+    "processorRegistration": "host-owned-content-addressed"
+  },
+  "soundUi": {
+    "profile": "brk-ui.json",
+    "hostOwned": true,
+    "descriptorDriven": true,
+    "engineExecutableUi": false,
+    "allParametersVisible": true
+  },
+  "instrumentPresets": {
+    "ownership": "brktrk-instrument",
+    "enginePackagePresetCount": 0
+  },
+  "package": {
+    "schema": "brk-engine-package-v1",
+    "version": "0.1.0-alpha.2",
+    "status": "preview-candidate",
+    "hostContract": "brk-synth-host-v1",
+    "integrationProfile": "brksynth-integration-ready-v1",
+    "runtimeSourceFilesIncluded": false,
+    "engineSpecificAudioWorkletIncluded": false,
+    "processorRegistration": "host-owned-content-addressed"
+  }
+}

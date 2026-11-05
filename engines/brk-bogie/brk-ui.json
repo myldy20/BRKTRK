@@ -1,0 +1,162 @@
+{
+  "schema": "brk-sound-ui-profile-v1",
+  "moduleId": "design.myldy.brk-bogie",
+  "engineId": "brk-bogie",
+  "title": "BRK BOGIE",
+  "hostOwned": true,
+  "engineExecutableUi": false,
+  "descriptorDriven": true,
+  "requiredAbiVersion": 65536,
+  "parameterCount": 8,
+  "presetOwnership": "brktrk-instrument",
+  "enginePackagePresetCount": 0,
+  "visibilityPolicy": "every ABI parameter must be reachable from the host UI; Bogie keeps all eight on Main and also exposes an All page",
+  "interaction": {
+    "continuous": {
+      "policy": "parameter-ramp",
+      "defaultSmoothingMs": 4
+    },
+    "discrete": {
+      "policy": "parameter-value",
+      "defaultSmoothingMs": 0
+    },
+    "requiresReconfigure": {
+      "policy": "stopped-state-edit",
+      "liveStructuralWrites": false
+    }
+  },
+  "modulation": {
+    "owner": "brktrk-instrument",
+    "engineStateContainsSlots": false,
+    "preferredSlotCount": 2,
+    "acceptedSources": [
+      "off",
+      "decay",
+      "lfo"
+    ],
+    "destinations": [
+      "decay",
+      "tone",
+      "sweep",
+      "noise",
+      "fm",
+      "drive",
+      "level"
+    ]
+  },
+  "groupLabels": {
+    "source": "Source",
+    "shape": "Shape",
+    "output": "Output"
+  },
+  "enumLabels": {
+    "model": [
+      "Kick",
+      "Snare",
+      "Hat",
+      "Clap",
+      "Tom",
+      "Rim",
+      "FM",
+      "Noise",
+      "Cowbell",
+      "Cymbal",
+      "Shaker",
+      "Clave"
+    ]
+  },
+  "plainSkewByKey": {
+    "decay": 0.6,
+    "tone": 0.7,
+    "drive": 0.7
+  },
+  "smoothingMsByKey": {
+    "decay": 4,
+    "tone": 4,
+    "sweep": 4,
+    "noise": 4,
+    "fm": 4,
+    "drive": 4,
+    "level": 4
+  },
+  "pages": [
+    {
+      "id": "main",
+      "label": "Main",
+      "mode": "curated",
+      "controls": [
+        "model",
+        "decay",
+        "tone",
+        "sweep",
+        "noise",
+        "fm",
+        "drive",
+        "level"
+      ]
+    },
+    {
+      "id": "source",
+      "label": "Source",
+      "mode": "curated",
+      "controls": [
+        "model"
+      ]
+    },
+    {
+      "id": "shape",
+      "label": "Shape",
+      "mode": "curated",
+      "controls": [
+        "decay",
+        "tone",
+        "sweep",
+        "noise",
+        "fm"
+      ]
+    },
+    {
+      "id": "output",
+      "label": "Output",
+      "mode": "curated",
+      "controls": [
+        "drive",
+        "level"
+      ]
+    },
+    {
+      "id": "all",
+      "label": "All",
+      "mode": "all"
+    }
+  ],
+  "performanceBanks": [
+    {
+      "id": "compact4",
+      "label": "4 Knobs",
+      "controls": [
+        "decay",
+        "tone",
+        "sweep",
+        "drive"
+      ]
+    },
+    {
+      "id": "tracker8",
+      "label": "8 Knobs",
+      "controls": [
+        "model",
+        "decay",
+        "tone",
+        "sweep",
+        "noise",
+        "fm",
+        "drive",
+        "level"
+      ]
+    }
+  ],
+  "requiredStateSchemaVersion": 65536,
+  "requiredStateBytes": 120,
+  "requiredOutputChannels": 2
+}
